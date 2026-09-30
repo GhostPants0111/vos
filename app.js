@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.5.0';
+const VERSION = '1.6.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -151,7 +151,29 @@ const I18N = {
     'g.paid4': 'Poné un límite de gasto mensual en Billing y pegá la clave acá abajo.',
     'g.paste': 'Pegá tu clave', 'g.saveTest': 'Guardar y probar', 'g.later': 'Más tarde',
     'g.ready': 'Listo, la clave funciona.', 'g.open': '¿Cómo consigo una clave?', 'g.setup': 'Configurar clave',
-    'g.close': 'Cerrar'
+    'g.close': 'Cerrar',
+    'more.help': 'Ayuda', 'g.howto': 'Ver cómo se usa la app', 'help.try': 'Probalo',
+    'help.filled': 'Ejemplo listo: tocá el botón azul.',
+    'help.intro': 'Vos tiene cuatro herramientas. Conjugar funciona sin conexión; las otras usan IA con tu clave.',
+    'help.conj': ['Escribí un infinitivo (hablar) para ver todas sus formas, o cualquier forma que te encontraste (dijeran, andate) para saber qué es.',
+      'Por persona: elegí una persona (vos, yo…) y ves esa forma en todos los tiempos, en una sola pantalla.',
+      'Vosotros, las formas en -se y los tiempos raros están ocultos; activalos con los botones de arriba.',
+      'Tocá cualquier forma para escucharla. La estrella la guarda en Guardados.'],
+    'help.word': ['Buscá una palabra en español para ver definiciones, ejemplos, sinónimos y notas locales, o una en inglés para saber cómo se dice acá.',
+      'Raíces: tocala para ver de qué partes está hecha la palabra y su familia.',
+      'Con la cámara o una foto te dice qué hay en la imagen y cómo se llama acá. Podés escribir en qué fijarse.',
+      'Si es un verbo, el botón Conjugar te lleva a sus tablas.'],
+    'help.tr': ['Escribí, dictá o sacale una foto a un texto, en español o inglés; el idioma se detecta solo. Las flechas fuerzan la dirección.',
+      'Informal o Formal cambia cómo queda el español: vos con amigos, usted para un mail al banco.',
+      'El micrófono dicta hasta que lo tocás de nuevo. ES / EN al lado elige el idioma en que hablás.'],
+    'help.check': ['Escribí, pegá o dictá tu español y te marca cada error con una explicación corta.',
+      'Solo errores corrige lo que está mal. Exigime también marca lo que suena poco natural.',
+      'Con una foto de algo escrito a mano o impreso, primero lo transcribe tal cual: revisalo contra la foto y después tocá Corregir.',
+      'Si dictás, no te marca puntuación ni tildes, solo gramática y palabras.'],
+    'help.more': ['Guardados: todo lo que marcaste con la estrella. Historial: tus últimas búsquedas; tocá una para volver a verla.',
+      'Ajustes: país, idioma de la app, idioma de las explicaciones y tu clave.'],
+    'help.ex.tr': 'Me tomo el ómnibus y voy para la rambla.',
+    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.'
   },
   en: {
     'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Check', 'tab.more': 'More',
@@ -258,7 +280,29 @@ const I18N = {
     'g.paid4': 'Set a monthly spend limit under Billing, then paste the key below.',
     'g.paste': 'Paste your key', 'g.saveTest': 'Save and test', 'g.later': 'Later',
     'g.ready': 'All set, the key works.', 'g.open': 'How do I get a key?', 'g.setup': 'Set up key',
-    'g.close': 'Close'
+    'g.close': 'Close',
+    'more.help': 'Help', 'g.howto': 'See how the app works', 'help.try': 'Try it',
+    'help.filled': 'Example ready: tap the blue button.',
+    'help.intro': 'Vos has four tools. Conjugate works offline; the others use AI with your key.',
+    'help.conj': ['Type an infinitive (hablar) to see every form, or any form you ran into (dijeran, andate) to find out what it is.',
+      'By person: pick one person (vos, yo…) and see that form across every tense on a single screen.',
+      'Vosotros, -se forms and rare tenses are hidden; turn them on with the buttons at the top.',
+      'Tap any form to hear it. The star keeps it in Saved.'],
+    'help.word': ['Look up a Spanish word for definitions, examples, synonyms and local notes, or an English word to see how it is said here.',
+      'Roots: tap it to see what parts the word is built from and its family.',
+      'With the camera or a photo it tells you what is in the picture and what it is called here. You can type what to focus on.',
+      'If it is a verb, the Conjugate button takes you to its tables.'],
+    'help.tr': ['Type, dictate or photograph text in Spanish or English; the language is detected for you. The arrows force a direction.',
+      'Casual or Formal changes how the Spanish comes out: vos with friends, usted for an email to the bank.',
+      'The mic keeps dictating until you tap it again. ES / EN next to it picks the language you are speaking.'],
+    'help.check': ['Type, paste or dictate your Spanish and every mistake is marked with a short reason.',
+      'Errors only fixes what is wrong. Push me also marks what sounds unnatural.',
+      'With a photo of handwriting or print, it first transcribes it exactly: check it against the photo, then tap Check.',
+      "If you dictate, punctuation and accents aren't marked, only grammar and word choice."],
+    'help.more': ['Saved: everything you starred. History: your recent lookups; tap one to see it again.',
+      'Settings: country, app language, explanation language and your key.'],
+    'help.ex.tr': 'Me tomo el ómnibus y voy para la rambla.',
+    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.'
   }
 };
 function t(k, ...a) {
@@ -495,6 +539,7 @@ function go(view, { focus = true } = {}) {
 $$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 
 /* ---------------- segmented controls ---------------- */
+function paintSeg(el, v) { $$('button', el).forEach(b => b.setAttribute('aria-checked', String(b.dataset.v === v))); }
 function seg(el, value, onChange) {
   const paint = v => $$('button', el).forEach(b => {
     b.setAttribute('role', 'radio');
@@ -1348,8 +1393,29 @@ function listHTML(items, empty, removable) {
   </div>`).join('');
 }
 
+function renderHelp(body) {
+  const tabName = { conj: 'tab.conj', word: 'tab.word', tr: 'tab.tr', check: 'tab.check', more: 'tab.more' };
+  const sec = k => `<div class="card help-sec">
+      <h3>${t(tabName[k])}</h3>
+      <ul>${t('help.' + k).map(x => `<li>${x}</li>`).join('')}</ul>
+      ${k === 'more' ? '' : `<button class="ghost" data-try="${k}">${t('help.try')}</button>`}
+    </div>`;
+  body.innerHTML = `<p class="help-intro">${t('help.intro')}</p>` + ['conj', 'word', 'tr', 'check', 'more'].map(sec).join('');
+  $$('[data-try]', body).forEach(b => b.onclick = () => tryExample(b.dataset.try));
+}
+function tryExample(k) {
+  if (k === 'conj') { openVerb('dijeran'); return; }
+  const box = { word: '#word-q', tr: '#tr-q', check: '#check-q' }[k];
+  const ex = { word: 'campera', tr: t('help.ex.tr'), check: t('help.ex.check') }[k];
+  go(k, { focus: false });
+  $(box).value = ex;
+  if (k === 'tr' || k === 'check') paintClear(k);
+  toast(t('help.filled'));
+}
+
 function renderMore(kind) {
   const body = $('#more-body');
+  if (kind === 'help') return renderHelp(body);
   if (kind === 'saved') {
     body.innerHTML = listHTML(SAVED, t('more.savedEmpty'), true) +
       (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">${t('more.copyList')}</button></div>` : '');
@@ -1634,11 +1700,13 @@ function openGuide() {
       <button class="primary" id="g-save">${t('g.saveTest')}</button>
       <button class="ghost" id="g-later">${t('g.later')}</button>
     </div>
-    <p class="msg" id="g-status" hidden></p>`;
+    <p class="msg" id="g-status" hidden></p>
+    <div class="settings-row"><button class="link" id="g-howto">${t('g.howto')}</button></div>`;
   g.hidden = false;
   document.body.style.overflow = 'hidden';
   $('#g-close').onclick = closeGuide;
   $('#g-later').onclick = closeGuide;
+  $('#g-howto').onclick = () => { closeGuide(); S.moreTab = 'help'; saveSettings(); go('more', { focus: false }); paintSeg($('#more-seg'), 'help'); };
   $('#g-save').onclick = async () => {
     const v = $('#g-key').value.trim();
     const st = $('#g-status');
@@ -1651,7 +1719,9 @@ function openGuide() {
       await ask({ system: 'Reply with JSON only.', content: 'Reply with {"ok":true}', maxTokens: 30 });
       st.textContent = t('g.ready');
       toast(t('key.works'));
-      setTimeout(closeGuide, 900);
+      st.innerHTML = `${esc(t('g.ready'))} <button class="link" id="g-howto2">${t('g.howto')}</button>`;
+      $('#g-howto2').onclick = () => $('#g-howto').click();
+      $('#g-later').textContent = t('g.close');
     } catch (e) { st.className = 'msg err'; st.textContent = e.message || String(e); }
     b.disabled = false;
   };

@@ -4,8 +4,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-19. **"How to use Vos" help page.** Explains what each feature does and how to get the most out of it: Conjugar (infinitive or any form, Por persona, the toggles, tap to hear), Palabra (lookups in Spanish or English, Raíces, photo lookup with the focus box), Traducir (auto direction, Informal/Formal, photo, dictation and the ES/EN mic), Corregir (Solo errores vs Exigime, photo of handwriting with proofreading, dictation), and Más (Guardados, Historial, Ajustes). In Spanish and English, following the app language.
-   Proposed placement: a fourth section in Más ("Ayuda" / "Help"), plus a "Cómo se usa" link at the end of the setup guide so new users land on it after adding their key. _Small._
+_None open._
 
 ## Proposed, not yet approved
 
@@ -14,6 +13,11 @@ Feedback collected while using v1.0.0. Batched into the next release.
 - Show the version number more prominently so it's obvious when an update has landed.
 
 ## Done
+
+### v1.6.0 (2026-09-30)
+
+19. **"How to use Vos" help page.** Explains what each feature does and how to get the most out of it: Conjugar (infinitive or any form, Por persona, the toggles, tap to hear), Palabra (lookups in Spanish or English, Raíces, photo lookup with the focus box), Traducir (auto direction, Informal/Formal, photo, dictation and the ES/EN mic), Corregir (Solo errores vs Exigime, photo of handwriting with proofreading, dictation), and Más (Guardados, Historial, Ajustes). In Spanish and English, following the app language.
+   Shipped as a fourth section in Más (Ayuda / Help), one card per tool with a Probalo button that opens that tool with an example filled in (Conjugar runs it; the AI tabs wait for a tap so nothing is spent). The setup guide now stays open after a working key and offers a link to Ayuda. _Small._
 
 ### v1.5.0 (2026-09-30)
 

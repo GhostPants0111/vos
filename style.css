@@ -352,3 +352,10 @@ body { padding-top: calc(env(safe-area-inset-top) + 12px); }
 .guide-card a { color: var(--celeste); }
 .gnote { background: var(--celeste-soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin: 10px 0; }
 @media (prefers-reduced-motion: no-preference) { .guide-card { animation: up .22s ease-out; } }
+
+/* ---------- v1.6: help ---------- */
+#more-seg button { font-size: 13px; padding: 8px 2px; }
+.help-intro { font-size: 15px; color: var(--muted); margin: 10px 2px 4px; }
+.help-sec h3 { font: 400 22px var(--serif); margin: 0 0 8px; color: var(--celeste); }
+.help-sec ul { margin: 0 0 12px; padding-left: 20px; }
+.help-sec li { margin: 0 0 6px; font-size: 15px; }

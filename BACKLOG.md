@@ -15,7 +15,8 @@ Feedback collected while using v1.0.0. Batched into the next release.
 10. **Clear (x) button on the Translate and Check text boxes.** The search fields on Conjugate and Word have one; the big text boxes don't. _Quick. Approved, hold for next batch._
 
 11. **Whole interface in Spanish.** Tabs, buttons, toggles, placeholders, hints, toasts and error messages, all in Uruguayan Spanish with voseo for instructions (Buscá, Traducí, Corregí, Sacá una foto). Tab names: Conjugar, Palabra, Traducir, Corregir, Más.
-   Open question: whether the AI's explanations (definitions, the "why" on each correction, notes) also switch to Spanish, or stay English. _Small. Approved, hold for next batch._
+   AI explanations: toggle in Ajustes, "Explicaciones: español / inglés", default español. Covers the "why" on each Check fix, the pattern note, Translate notes, and the acá / ojo notes on Word.
+   Word definitions stay in English regardless of the toggle (sense definitions, example translations, root and family meanings). Cory likes them as they are; revisit later. _Small. Approved, hold for next batch._
 
 ## Proposed, not yet approved
 

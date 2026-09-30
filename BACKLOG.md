@@ -5,7 +5,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 ## Requested
 
 8. **Photo reading misreads Cory's handwriting on Haiku** (Check tab).
-   Test 1: sideways photo returned only 16 words, all wrong. Test 2: the same kind of page upright on Haiku got roughly the first sentence right, then degraded into mostly invented words. A larger Claude model read the same upright photo almost completely, so the photo is fine and Haiku is the limit.
+   Test 1: sideways photo returned only 16 words, all wrong. Test 2: the same kind of page upright on Haiku got roughly the first sentence right, then degraded into mostly invented words. A larger Claude model read the same upright photo almost completely, so the photo is fine and Haiku is the limit. Test 3: Sonnet on the same upright photo was near-perfect and kept Cory's real mistakes intact (por que, important, en hoy día); its only misses were on markup (two caret insertions dropped, one green correction taken). Sonnet confirmed for photo reading; Opus not needed.
    Plan: (a) send photo reading to a stronger model (Sonnet by default, own setting), everything else stays on Haiku; (b) rotate button before sending; (c) low priority, since Cory normally photographs clean pages: basic markup handling in the reading prompt (drop struck-through words, include caret insertions); (d) tap-to-enlarge photo for proofreading. _Small-medium. Approved, hold for next batch._
 
 9. **Voice input on Translate and Check.** Speak instead of type.

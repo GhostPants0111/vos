@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.6.0';
+const VERSION = '1.7.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -173,7 +173,11 @@ const I18N = {
     'help.more': ['Guardados: todo lo que marcaste con la estrella. Historial: tus últimas búsquedas; tocá una para volver a verla.',
       'Ajustes: país, idioma de la app, idioma de las explicaciones y tu clave.'],
     'help.ex.tr': 'Me tomo el ómnibus y voy para la rambla.',
-    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.'
+    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.',
+    'inst.android': 'Instalá Vos como app: se abre al toque, funciona sin conexión y no se pierden tus datos.',
+    'inst.androidManual': 'Instalá Vos como app: en Chrome tocá el menú ⋮ → <b>Agregar a la pantalla principal</b> (o <b>Instalar app</b>).',
+    'inst.ios': 'Instalá Vos en tu iPhone: tocá <b>Compartir</b> (el cuadrado con la flecha) → <b>Agregar a inicio</b>. Así no se borran tu clave ni tus guardados.',
+    'inst.btn': 'Instalar', 'inst.done': 'Vos quedó instalada. Abrila desde tu pantalla de inicio.', 'inst.close': 'Ahora no'
   },
   en: {
     'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Check', 'tab.more': 'More',
@@ -302,7 +306,11 @@ const I18N = {
     'help.more': ['Saved: everything you starred. History: your recent lookups; tap one to see it again.',
       'Settings: country, app language, explanation language and your key.'],
     'help.ex.tr': 'Me tomo el ómnibus y voy para la rambla.',
-    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.'
+    'help.ex.check': 'Ayer yo iba al almacén y compré dos frutillas muy rica.',
+    'inst.android': 'Install Vos as an app: it opens instantly, works offline and keeps your data safe.',
+    'inst.androidManual': 'Install Vos as an app: in Chrome tap the ⋮ menu → <b>Add to Home screen</b> (or <b>Install app</b>).',
+    'inst.ios': 'Install Vos on your iPhone: tap <b>Share</b> (the square with the arrow) → <b>Add to Home Screen</b>. That way your key and saved items are never erased.',
+    'inst.btn': 'Install', 'inst.done': 'Vos is installed. Open it from your home screen.', 'inst.close': 'Not now'
   }
 };
 function t(k, ...a) {
@@ -1510,6 +1518,7 @@ function refreshLanguage() {
   $('#tr-miclang').setAttribute('aria-label', t('aria.miclang', trMicLang));
   if (S.view === 'more') renderMore(S.moreTab);
   if (DATA) runConj();
+  paintInstall();
 }
 
 /* ============================================================
@@ -1744,6 +1753,47 @@ if (IOS && window.visualViewport) {
 }
 
 /* ============================================================
+   INSTALL PROMPT (phones only, when opened in the browser)
+   ============================================================ */
+let installEvent = null;
+let installDismissed = false;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();          // keep Chrome's mini-bar away; we show our own
+  installEvent = e;
+  paintInstall();
+});
+window.addEventListener('appinstalled', () => {
+  installEvent = null;
+  $('#installbar').hidden = true;
+  toast(t('inst.done'));
+});
+function paintInstall() {
+  const bar = $('#installbar');
+  const phone = IOS || /Android/i.test(navigator.userAgent);
+  if (!phone || STANDALONE() || installDismissed) { bar.hidden = true; return; }
+  const text = IOS ? t('inst.ios') : installEvent ? t('inst.android') : t('inst.androidManual');
+  bar.innerHTML = `
+    <img src="icons/icon-192.png" alt="" width="36" height="36">
+    <p>${text}</p>
+    <div class="ib-actions">
+      ${!IOS && installEvent ? `<button class="primary" id="ib-go">${t('inst.btn')}</button>` : ''}
+      <button class="icon small" id="ib-x" aria-label="${t('inst.close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>`;
+  bar.hidden = false;
+  $('#ib-x').onclick = () => { installDismissed = true; bar.hidden = true; };
+  const go = $('#ib-go');
+  if (go) go.onclick = async () => {
+    const ev = installEvent; if (!ev) return;
+    ev.prompt();
+    try { await ev.userChoice; } catch {}
+    // Accepted or declined, the native prompt is spent; don't nag again this session.
+    installEvent = null;
+    installDismissed = true;
+    bar.hidden = true;
+  };
+}
+
+/* ============================================================
    DICTATION (Chrome speech recognition, free, needs signal)
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1850,6 +1900,7 @@ if (!SR) $$('[data-mic], #tr-miclang').forEach(b => b.hidden = true);
 seg($('#more-seg'), S.moreTab, v => { S.moreTab = v; saveSettings(); renderMore(v); });
 go(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : S.view, { focus: false });
 if (!S.key && !S.guideSeen) setTimeout(openGuide, 300);
+paintInstall();
 runConj();
 loadVerbs();
 

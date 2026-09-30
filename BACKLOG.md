@@ -14,6 +14,10 @@ _None open._
 
 ## Done
 
+### v1.7.0 (2026-09-30)
+
+20. **Install prompt when opened in a phone browser.** A banner at the top when Vos runs in the browser instead of from the home screen, on phones only. Android: a one-tap Instalar button that opens Chrome's own install dialog; if Chrome hasn't offered it yet, menu ⋮ → Agregar a la pantalla principal instructions. iPhone: Compartir → Agregar a inicio instructions, with the warning that Safari may erase data otherwise. Hidden once installed, on desktop, and for the rest of the session after dismissing or answering the install dialog. Follows the app language. _Small._
+
 ### v1.6.0 (2026-09-30)
 
 19. **"How to use Vos" help page.** Explains what each feature does and how to get the most out of it: Conjugar (infinitive or any form, Por persona, the toggles, tap to hear), Palabra (lookups in Spanish or English, Raíces, photo lookup with the focus box), Traducir (auto direction, Informal/Formal, photo, dictation and the ES/EN mic), Corregir (Solo errores vs Exigime, photo of handwriting with proofreading, dictation), and Más (Guardados, Historial, Ajustes). In Spanish and English, following the app language.

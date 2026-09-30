@@ -4,12 +4,11 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-_None open._
+15. **"¿Qué es esto?" photo lookup on Palabra.** Camera and gallery buttons on Palabra. Every object or dish in the photo named the way it's said in Uruguay: el/la + word, most prominent first, up to about 8, the general term when it differs (frutilla, fresa elsewhere), a one-line description for dishes, a short position hint when useful ("the small round green one, front left"), and a flag when the model isn't sure. A list, not labels drawn on the photo. Each item: tap to hear, star, open a full Palabra lookup. Optional short text box with the photo to focus it ("just the food", "¿qué es lo de la izquierda?"). Uses the photo model (Sonnet, or Gemini Flash with a Gemini key). _Small-medium. Approved, hold for next batch._
 
 ## Proposed, not yet approved
 
-- **"¿Qué es esto?" photo lookup** on the Palabra tab. Snap or pick a photo, get every object or dish in it named the way it's said in Uruguay (el/la + word, most prominent first, up to about 8), with the general term when it differs (frutilla, fresa elsewhere), a one-line description for dishes (chivito, torta frita), and a flag when the model isn't sure. Each item: tap to hear, star, and open a full Palabra lookup. Uses the photo model. _Small-medium._
-- **Country / variety setting** replacing the hard-coded Uruguay tuning. Controls: the variety block in every AI prompt (vocabulary, slang, voseo vs tú, formality norms); which pronoun leads in Conjugar (vos for Uruguay, Argentina, Paraguay, most of Central America; tú for Peru, Mexico, Bolivia etc.; vosotros shown for Spain); dictation and voice locale; and the "acá" tag. Chilean voseo (pensái, cachai) has different verb forms and would start as tú-first with a note. AI quality is weaker for smaller varieties. New installs could guess the country from the phone's language setting. _Medium._
+- **Country / variety setting** (in design with Cory). Principle: Uruguay-first; Uruguay stays the default and the app's identity. Replaces the hard-coded Uruguay tuning. Controls: the variety block in every AI prompt (vocabulary, slang, voseo vs tú, formality norms); which pronoun leads in Conjugar (vos for Uruguay, Argentina, Paraguay, most of Central America; tú for Peru, Mexico, Bolivia etc.; vosotros shown for Spain); dictation and voice locale; and the "acá" tag. Chilean voseo (pensái, cachai) has different verb forms and would start as tú-first with a note. AI quality is weaker for smaller varieties. New installs could guess the country from the phone's language setting. _Medium._
 
 - Tappable word-family entries on Word cards (each tap is a new lookup). Parked: maybe later.
 - Report button on AI results that copies input + output in one tap, for faster feedback.

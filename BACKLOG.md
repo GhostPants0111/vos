@@ -4,7 +4,8 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-_None open._
+8. **Photo reading can't handle Cory's handwriting on Haiku** (Check tab). Printed text not tested yet.
+   Next step: Cory tests the same photos with Model set to Sonnet in Settings. If Sonnet reads it, add a separate "photo reading" model setting that defaults to Sonnet while everything else stays on Haiku. Also consider a crop step before sending, and in-app photo tips (light, flat page, fill the frame). _Small, pending test._
 
 ## Proposed, not yet approved
 

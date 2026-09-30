@@ -20,7 +20,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
    Note: in this mode the whole verb fits on roughly one screen, so mood tabs aren't needed while it's on. Reverse lookup should pre-select the person: typing `dijeran` opens on ellos/ustedes. Toggle and chosen person both stick between lookups. _Small._
 
 6. **Remove the "vos" name from the top bar** to save vertical space on every screen.
-   Note: the saved, history and settings icons live in that bar, so they need a new home. Plan: keep them as a slim icon-only row, right-aligned. _Quick._
+   Note: the saved, history and settings icons live in that bar, so they need a new home. Approved: drop the top bar entirely and add a fifth bottom tab, More, holding Saved, History and Settings. _Small._
 
 ## Proposed, not yet approved
 

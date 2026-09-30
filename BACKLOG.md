@@ -8,7 +8,11 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Proposed, not yet approved
 
-- **Country / variety setting** (in design with Cory). Principle: Uruguay-first; Uruguay stays the default and the app's identity. Replaces the hard-coded Uruguay tuning. Controls: the variety block in every AI prompt (vocabulary, slang, voseo vs tú, formality norms); which pronoun leads in Conjugar (vos for Uruguay, Argentina, Paraguay, most of Central America; tú for Peru, Mexico, Bolivia etc.; vosotros shown for Spain); dictation and voice locale; and the "acá" tag. Chilean voseo (pensái, cachai) has different verb forms and would start as tú-first with a note. AI quality is weaker for smaller varieties. New installs could guess the country from the phone's language setting. _Medium._
+- **Country / variety setting** (in design with Cory). Principle: Uruguay-first. Uruguay is the default, first in the list and the app's identity; no auto-switching from the phone's language, changing country is always a deliberate choice in Ajustes.
+  Decided so far: every Spanish-speaking country as its own entry, no grouping. The "acá" note on Palabra (and all regional notes) follows the selected country. Every country prompt carries a rule not to invent differences: if usage matches the wider region, say nothing.
+  Conjugar modes: vos first (Uruguay, Argentina, Paraguay, Nicaragua, Costa Rica, Guatemala, Honduras, El Salvador); tú first with vos shown (Bolivia, Colombia, Venezuela, Ecuador, Chile plus a present-tense "voseo chileno" row); tú only (Perú, México, Cuba, República Dominicana, Puerto Rico, Panamá); tú only plus vosotros shown automatically (España).
+  Country notes: Argentina same forms as UY, vos subjunctive more accepted; Paraguay Guaraní mixing; Chile verbal voseo (estái, podís); Bolivia vos in Santa Cruz and Tarija; Colombia usted among friends, vos in Medellín and Cali; Costa Rica ustedeo; Ecuador vos in the Sierra; Venezuela vos in Zulia; España leísmo, vosotros. Smaller varieties get thinner AI knowledge.
+  Open: whether to include Estados Unidos and Guinea Ecuatorial. _Medium._
 
 - Tappable word-family entries on Word cards (each tap is a new lookup). Parked: maybe later.
 - Report button on AI results that copies input + output in one tap, for faster feedback.

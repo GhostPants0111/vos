@@ -13,6 +13,9 @@ Feedback collected while using v1.0.0. Batched into the next release.
 3. **Translate: camera button only opens the gallery.** Needs to be able to take a photo directly.
    Note: bug, missing capture setting. Fix with two buttons, camera and gallery, and use the same pair on Check (#1). _Quick._
 
+4. **Conjugator is a long scroll.** Make the tables quicker to scan.
+   Proposed (awaiting pick): mood tabs under the vos box (Indicativo / Subjuntivo / Imperativo / Compuestos) showing one mood at a time; compound tenses grouped in their own tab since they're just haber + participle; pretérito anterior and futuro de subjuntivo (near-extinct in speech) hidden by default. _Small._
+
 ## Proposed, not yet approved
 
 - Report button on AI results that copies input + output in one tap, for faster feedback.

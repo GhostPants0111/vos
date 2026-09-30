@@ -9,8 +9,8 @@ Feedback collected while using v1.0.0. Batched into the next release.
    Plan: (a) send photo reading to a stronger model (Sonnet by default, own setting), everything else stays on Haiku; (b) rotate button before sending; (c) low priority, since Cory normally photographs clean pages: basic markup handling in the reading prompt (drop struck-through words, include caret insertions); (d) tap-to-enlarge photo for proofreading. _Small-medium. Approved, hold for next batch._
 
 9. **Voice input on Translate and Check.** Speak instead of type.
-   Plan: mic button next to the camera buttons, using Chrome's built-in speech recognition (free, no API cost, needs signal). It has to be told the language before listening, so Translate gets a Spanish/English choice defaulting to Spanish; Check is always Spanish (es-UY). Text lands in the box for a quick look before Check or Translate.
-   Note: dictation normalises what you say (no spelling or accent mistakes exist in speech, and the recognizer leans toward correct words), so Check on dictated text grades spoken grammar and word choice, not spelling. _Small._
+   Plan: mic button next to the camera buttons, using Chrome's built-in speech recognition (free, no API cost, needs signal). It has to be told the language before listening, so Translate gets a Spanish/English choice defaulting to Spanish; Check is always Spanish (es-UY). Text lands in the box for a quick look before Check or Translate. Dictation keeps listening until Cory taps stop (continuous mode; restart quietly if Chrome cuts out on a pause). Translate mic defaults to Spanish; Cory mostly dictates Spanish he heard.
+   Note: dictation normalises what you say (no spelling or accent mistakes exist in speech, and the recognizer leans toward correct words), so Check on dictated text grades spoken grammar and word choice, not spelling. _Small. Approved, hold for next batch._
 
 ## Proposed, not yet approved
 

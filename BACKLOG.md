@@ -4,8 +4,9 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-8. **Photo reading can't handle Cory's handwriting on Haiku** (Check tab). Printed text not tested yet.
-   Next step: Cory tests the same photos with Model set to Sonnet in Settings. If Sonnet reads it, add a separate "photo reading" model setting that defaults to Sonnet while everything else stays on Haiku. Also consider a crop step before sending, and in-app photo tips (light, flat page, fill the frame). _Small, pending test._
+8. **Photo reading misreads Cory's handwriting on Haiku** (Check tab). First test: about 16 wrong words in a 300-word sample (roughly 95% right), photo was rotated. Printed text not tested yet.
+   Risk: a misread word looks like Cory's own mistake, so Check then "corrects" something he never wrote.
+   Next step: Cory tests the same photos with Model set to Sonnet in Settings. If Sonnet reads it, add a separate "photo reading" model setting that defaults to Sonnet while everything else stays on Haiku. Also consider: a rotate button before sending (sideways text reads worse), tap-to-enlarge on the photo thumbnail for proofreading, a crop step before sending, and in-app photo tips (light, flat page, fill the frame). _Small, pending test._
 
 ## Proposed, not yet approved
 

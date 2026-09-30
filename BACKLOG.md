@@ -4,9 +4,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-7. **Word: show roots and their meanings.**
-   Approved: a compact "Roots" block on each Word card with (a) the parts breakdown, e.g. des- (undo) + cubrir (cover), with meanings; (b) a one-line origin (Latin, Arabic, etc.), optional, shown only for words with a clear, well-known origin; (c) word family, 3 to 6 related Spanish words with short meanings; (d) an English cognate, optional, shown only when it helps memory, flagged if it's a false friend. Family words are plain text for now (not tappable).
-   Note: morphology and word families are reliable; detailed etymology is where the model is likeliest to invent things, so keep origin to one short line and allow it to be omitted. Small prompt + render change, adds a little to each lookup's cost. _Small._
+_None open._
 
 ## Proposed, not yet approved
 
@@ -15,6 +13,12 @@ Feedback collected while using v1.0.0. Batched into the next release.
 - Show the version number more prominently so it's obvious when an update has landed.
 
 ## Done
+
+### v1.2.0 (2026-09-30)
+
+7. **Word: show roots and their meanings.**
+   Shipped as a collapsed Roots line (tap to open): a compact "Roots" block on each Word card with (a) the parts breakdown, e.g. des- (undo) + cubrir (cover), with meanings; (b) a one-line origin (Latin, Arabic, etc.), optional, shown only for words with a clear, well-known origin; (c) word family, 3 to 6 related Spanish words with short meanings; (d) an English cognate, optional, shown only when it helps memory, flagged if it's a false friend. Family words are plain text for now (not tappable).
+   Note: morphology and word families are reliable; detailed etymology is where the model is likeliest to invent things, so keep origin to one short line and allow it to be omitted. Small prompt + render change, adds a little to each lookup's cost. _Small._
 
 ### v1.1.0 (2026-09-30)
 

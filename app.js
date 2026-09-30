@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.1.0';
+const VERSION = '1.2.0';
 const MODELS = {
   'claude-haiku-4-5': 'Haiku 4.5 (fast, cheapest)',
   'claude-sonnet-5-5': 'Sonnet 5.5 (sharper, pricier)'
@@ -555,13 +555,28 @@ Reply with JSON only, no prose, no code fences:
   "synonyms":[str],
   "antonyms":[str],
   "uruguay":str|null,
-  "careful":str|null
+  "careful":str|null,
+  "roots":{
+    "parts":[{"part":str,"meaning":str}],
+    "literal":str|null,
+    "origin":str|null,
+    "family":[{"word":str,"meaning":str}],
+    "english":str|null,
+    "false_friend":bool
+  }|null
 }]}
 senses: 1 to 4, most common first.
 gender: for nouns only; "el/la" when the same form is used for both (el/la periodista). For adjectives put the feminine in the word field like "cansado, cansada".
 synonyms/antonyms: up to 6 each, words actually used in Uruguay. Empty arrays if none fit.
 uruguay: one sentence only if usage in Uruguay differs from general Spanish (different word preferred, different meaning, regional connotation). Otherwise null.
-careful: one sentence only for a real false friend, vulgar/sexual double meaning in the Río de la Plata, or register trap. Otherwise null.`;
+careful: one sentence only for a real false friend, vulgar/sexual double meaning in the Río de la Plata, or register trap. Otherwise null.
+roots: help the learner decode and remember the word.
+- parts: split into prefix / root / suffix with a short English meaning for each (des- "undo", cubrir "to cover", -miento "the act of"). Only real, standard morphology. A simple word with no useful split gets a single part.
+- literal: what the parts add up to, in a few English words, only if it adds something; else null.
+- origin: ONE short line (e.g. "Latin cooperire, to cover completely"; "Arabic al-mujadda, cushion"). Only when the origin is clear and well established. If you are not sure, use null. Never invent an etymology.
+- family: 3 to 6 common related Spanish words sharing the root, each with a short English meaning. Empty array if none.
+- english: an English word sharing the root when it helps memory ("cover, discover"), else null. false_friend true if the resemblance is misleading.
+Use null for roots only for interjections, slang like "ta", or proper nouns.`;
 
 async function runWord(q, cached) {
   const out = $('#word-out');
@@ -571,7 +586,7 @@ async function runWord(q, cached) {
   loading(out, `Looking up ${q}…`);
   $('#word-form button').disabled = true;
   try {
-    const d = await ask({ system: WORD_SYS, content: q, maxTokens: 1400 });
+    const d = await ask({ system: WORD_SYS, content: q, maxTokens: 2200 });
     renderWord(q, d);
     addHistory({ id: 'word:' + fold(q), type: 'word', key: q, label: q, sub: summarizeWord(d), data: d });
   } catch (e) { failed(out, e); }
@@ -582,6 +597,17 @@ function summarizeWord(d) {
   if (!e) return '';
   if (d.query_lang === 'en') return d.entries.map(x => x.word).join(', ');
   return (e.senses && e.senses[0] && e.senses[0].def) || '';
+}
+function rootsHTML(r) {
+  if (!r || !((r.parts && r.parts.length) || (r.family && r.family.length) || r.origin)) return '';
+  const parts = (r.parts || []).filter(p => p && p.part);
+  return `<details class="roots"><summary>Roots</summary>
+    ${parts.length ? `<p class="rparts">${parts.map(p => `<b>${esc(p.part)}</b> <span>${esc(p.meaning || '')}</span>`).join('<i>+</i>')}</p>` : ''}
+    ${r.literal ? `<p class="rlit">→ ${esc(r.literal)}</p>` : ''}
+    ${r.origin ? `<p class="rline"><span class="rk">Origin</span>${esc(r.origin)}</p>` : ''}
+    ${r.family && r.family.length ? `<p class="rline"><span class="rk">Family</span>${r.family.map(f => `<b>${esc(f.word)}</b> <span class="rm">${esc(f.meaning || '')}</span>`).join('<span class="rm"> · </span>')}</p>` : ''}
+    ${r.english ? `<p class="rline"><span class="rk">English</span>${esc(r.english)}${r.false_friend ? ' <span class="tag warn">false friend</span>' : ''}</p>` : ''}
+  </details>`;
 }
 function renderWord(q, d) {
   const out = $('#word-out');
@@ -599,6 +625,7 @@ function renderWord(q, d) {
         ${e.antonyms && e.antonyms.length ? `<p class="syn">Opposites: ${e.antonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
         ${e.uruguay ? `<div class="flag"><span class="tag">acá</span><span>${esc(e.uruguay)}</span></div>` : ''}
         ${e.careful ? `<div class="flag"><span class="tag warn">ojo</span><span>${esc(e.careful)}</span></div>` : ''}
+        ${rootsHTML(e.roots)}
         ${verb ? `<div class="row"><button class="ghost" data-conj="${esc(verb)}">Conjugate ${esc(verb)}</button></div>` : ''}
       </div>`;
     }).join('');

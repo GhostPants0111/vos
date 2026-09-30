@@ -272,3 +272,19 @@ body { padding-top: calc(env(safe-area-inset-top) + 12px); }
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; }
 .chip span { padding: 5px 11px; }
+
+/* ---------- v1.2: roots ---------- */
+.roots { margin: 12px 0 0; border-top: 1px solid var(--line); padding-top: 10px; }
+.roots summary { cursor: pointer; font-size: 14px; font-weight: 600; color: var(--celeste); list-style: none; }
+.roots summary::-webkit-details-marker { display: none; }
+.roots summary::after { content: ' ▸'; }
+.roots[open] summary::after { content: ' ▾'; }
+.rparts { margin: 10px 0 0; line-height: 1.8; }
+.rparts b { font: 400 18px var(--serif); }
+.rparts span { font-size: 13px; color: var(--muted); }
+.rparts i { font-style: normal; color: var(--muted); margin: 0 8px; }
+.rlit { margin: 2px 0 0; font-size: 14px; color: var(--muted); }
+.rline { margin: 8px 0 0; font-size: 14px; line-height: 1.6; }
+.rline b { font: 400 16px var(--serif); }
+.rk { display: inline-block; min-width: 58px; font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 6px; }
+.rline .rm { color: var(--muted); font-size: 13px; }

@@ -14,10 +14,13 @@ Feedback collected while using v1.0.0. Batched into the next release.
    Note: bug, missing capture setting. Fix with two buttons, camera and gallery, and use the same pair on Check (#1). _Quick._
 
 4. **Conjugator is a long scroll.** Make the tables quicker to scan.
-   Approved: mood tabs under the vos box (Indicativo / Subjuntivo / Imperativo / Compuestos) showing one mood at a time; compound tenses grouped in their own tab since they're just haber + participle; pretérito anterior and futuro de subjuntivo (near-extinct in speech) hidden by default. _Small._
+   Approved: mood tabs under the vos box (Indicativo / Subjuntivo / Imperativo / Compuestos) showing one mood at a time; compound tenses grouped in their own tab since they're just haber + participle; pretérito anterior and futuro de subjuntivo (near-extinct in speech) hidden by default. Last-used mood tab sticks between lookups. _Small._
 
 5. **"By person" toggle on the conjugator.** Pick one person (yo, vos, tú, él/ella/usted, nosotros, ellos/ustedes) and see just that form across every tense, one line per tense, grouped by mood.
-   Note: in this mode the whole verb fits on roughly one screen, so mood tabs aren't needed while it's on. Reverse lookup should pre-select the person: typing `dijeran` opens on ellos/ustedes. _Small._
+   Note: in this mode the whole verb fits on roughly one screen, so mood tabs aren't needed while it's on. Reverse lookup should pre-select the person: typing `dijeran` opens on ellos/ustedes. Toggle and chosen person both stick between lookups. _Small._
+
+6. **Remove the "vos" name from the top bar** to save vertical space on every screen.
+   Note: the saved, history and settings icons live in that bar, so they need a new home. Plan: keep them as a slim icon-only row, right-aligned. _Quick._
 
 ## Proposed, not yet approved
 

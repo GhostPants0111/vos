@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.0.0';
+const VERSION = '1.1.0';
 const MODELS = {
   'claude-haiku-4-5': 'Haiku 4.5 (fast, cheapest)',
   'claude-sonnet-5-5': 'Sonnet 5.5 (sharper, pricier)'
@@ -31,9 +31,10 @@ const store = {
 
 const DEFAULTS = {
   key: '', model: 'claude-haiku-4-5',
-  vosotros: false, se: false,
+  vosotros: false, se: false, rare: false,
+  byPerson: false, person: 'vos', mood: 'ind',
   trReg: 'casual', checkReg: 'formal', checkMode: 'push',
-  view: 'conj'
+  view: 'conj', moreTab: 'saved'
 };
 const S = Object.assign({}, DEFAULTS, store.get('vos.settings', {}));
 const saveSettings = () => store.set('vos.settings', S);
@@ -122,7 +123,7 @@ function sayBtn(text) {
 }
 
 /* ---------------- navigation ---------------- */
-const VIEWS = ['conj', 'word', 'tr', 'check'];
+const VIEWS = ['conj', 'word', 'tr', 'check', 'more'];
 function go(view, { focus = true } = {}) {
   if (!VIEWS.includes(view)) view = 'conj';
   for (const v of VIEWS) $(`[data-view="${v}"]`).hidden = v !== view;
@@ -130,10 +131,9 @@ function go(view, { focus = true } = {}) {
   S.view = view; saveSettings();
   if (location.hash !== '#' + view) history.replaceState(history.state, '', '#' + view);
   window.scrollTo(0, 0);
-  if (focus) {
-    const f = { conj: '#conj-q', word: '#word-q', tr: '#tr-q', check: '#check-q' }[view];
-    setTimeout(() => $(f).focus({ preventScroll: true }), 30);
-  }
+  if (view === 'more') renderMore(S.moreTab);
+  const f = { conj: '#conj-q', word: '#word-q', tr: '#tr-q', check: '#check-q' }[view];
+  if (focus && f) setTimeout(() => $(f).focus({ preventScroll: true }), 30);
 }
 $$('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 
@@ -156,7 +156,7 @@ const UY = `Target variety: Uruguayan Spanish as used in Montevideo today. Not p
 - In casual text, Uruguayans often mix tú with voseo verbs ("tú sabés"). That is real usage here; do not treat it as an error in casual register.`;
 
 async function ask({ system, content, maxTokens = 1200 }) {
-  if (!S.key) throw new Error('Add your Anthropic API key in Settings first (gear icon, top right).');
+  if (!S.key) throw new Error('Add your Anthropic API key first: More tab, then Settings.');
   if (!navigator.onLine) throw new Error("You're offline. Conjugate still works; this needs a connection.");
   let r;
   try {
@@ -205,10 +205,36 @@ let DATA = null, REV = null;
 let AIVERBS = store.get('vos.aiverbs', {});
 
 const PERSONS = ['yo', 'tú', 'él / ella / usted', 'nosotros', 'vosotros', 'ellos / ustedes'];
-const IND = ['ind_pres', 'ind_pret', 'ind_imp', 'ind_fut', 'ind_cond', 'ind_pp', 'ind_plus', 'ind_futp', 'ind_condp', 'ind_ant'];
-const SUB = ['sub_pres', 'sub_imp', 'sub_imp_se', 'sub_pp', 'sub_plus', 'sub_fut', 'sub_futp'];
-const IMP = ['imp_aff', 'imp_neg'];
 const COMPOUND = { ind_pp: 'ind_pres', ind_plus: 'ind_imp', ind_futp: 'ind_fut', ind_condp: 'ind_cond', ind_ant: 'ind_pret', sub_pp: 'sub_pres', sub_plus: 'sub_imp', sub_futp: 'sub_fut' };
+const MOODS = {
+  ind:  { label: 'Indicativo', tenses: ['ind_pres', 'ind_pret', 'ind_imp', 'ind_fut', 'ind_cond'] },
+  sub:  { label: 'Subjuntivo', tenses: ['sub_pres', 'sub_imp', 'sub_imp_se', 'sub_fut'] },
+  imp:  { label: 'Imperativo', tenses: ['imp_aff', 'imp_neg'] },
+  comp: { label: 'Compuestos', tenses: ['ind_pp', 'ind_plus', 'ind_futp', 'ind_condp', 'ind_ant', 'sub_pp', 'sub_plus', 'sub_futp'] }
+};
+const RARE = new Set(['ind_ant', 'sub_fut', 'sub_futp']);
+// Person keys used by the "By person" view. idx points into the 6-slot form arrays.
+const PKEYS = [
+  { k: 'yo', label: 'yo', idx: 0 },
+  { k: 'vos', label: 'vos', idx: 1 },
+  { k: 'tu', label: 'tú', idx: 1 },
+  { k: 'el', label: 'él / usted', idx: 2 },
+  { k: 'nos', label: 'nosotros', idx: 3 },
+  { k: 'vosotros', label: 'vosotros', idx: 4 },
+  { k: 'ellos', label: 'ellos / ustedes', idx: 5 }
+];
+const IDX_TO_KEY = ['yo', 'tu', 'el', 'nos', 'vosotros', 'ellos'];
+
+function moodKeyOf(t) {
+  for (const [k, m] of Object.entries(MOODS)) if (m.tenses.includes(t)) return k;
+  return null;
+}
+function tenseVisible(t, force) {
+  if (t === force) return true;
+  if (RARE.has(t) && !S.rare) return false;
+  if (t === 'sub_imp_se' && !S.se) return false;
+  return true;
+}
 
 async function loadVerbs() {
   try {
@@ -242,6 +268,11 @@ function buildRev() {
   }
 }
 
+const SUB_COMP = new Set(['sub_pp', 'sub_plus', 'sub_futp']);
+function tenseLabel(t) {
+  const [es, en] = tenseName(t);
+  return SUB_COMP.has(t) ? [es + ' (subj.)', en + ' subjunctive'] : [es, en];
+}
 function tenseName(t) {
   if (t === 'ger') return ['Gerundio', 'Gerund'];
   if (t === 'pp') return ['Participio', 'Past participle'];
@@ -254,7 +285,7 @@ function moodOf(t) {
   return '';
 }
 function describeHit(h) {
-  const [es, en] = tenseName(h.tense);
+  const [, en] = tenseName(h.tense);
   const m = moodOf(h.tense);
   const WHO = ['yo', 'tú', 'él/usted', 'nosotros', 'vosotros', 'ellos/ustedes'];
   const who = h.i === 'vos' ? 'vos' : (h.i >= 0 ? WHO[h.i] : '');
@@ -283,10 +314,27 @@ function fillCompounds(v) {
   }
 }
 
+/* The person/tense a reverse-lookup hit points at, in "By person" terms. */
+function personForHit(v, h) {
+  if (!h || h.i === -1 || h.i == null) return null;
+  if (h.i === 'vos') return 'vos';
+  if (h.i === 1) {
+    const vf = vosFormFor(v, h.tense);
+    return vf && vf !== v.t[h.tense][1] ? 'tu' : 'vos';
+  }
+  return IDX_TO_KEY[h.i];
+}
+
+let lastQ = '';   // folded query, for highlighting the form you typed
+
+function isHit(f) {
+  return lastQ && f && fold(String(f).replace(/^no\s+/, '')) === lastQ;
+}
+
 function tenseTable(v, tense) {
   const forms = v.t[tense];
   if (!forms || !forms.some(Boolean)) return '';
-  const [es, en] = tenseName(tense);
+  const [es, en] = tenseLabel(tense);
   const vos = vosFormFor(v, tense);
   const rows = [];
   if (forms[0]) rows.push(['yo', forms[0], '']);
@@ -301,14 +349,76 @@ function tenseTable(v, tense) {
   if (S.vosotros && forms[4]) rows.push([PERSONS[4], forms[4], '']);
   if (forms[5]) rows.push([PERSONS[5], forms[5], '']);
   return `<div class="tense"><h3>${esc(es)} <span>${esc(en)}</span></h3>` +
-    rows.map(([p, f, c]) => `<div class="frow ${c}" data-say="${esc(f)}"><span class="p">${esc(p)}</span><span class="f">${esc(f)}</span></div>`).join('') +
+    rows.map(([p, f, c]) => `<div class="frow ${c}${isHit(f) ? ' hit' : ''}" data-say="${esc(f)}"><span class="p">${esc(p)}</span><span class="f">${esc(f)}</span></div>`).join('') +
     `</div>`;
 }
 
-function renderVerb(inf, { note = '', ai = false } = {}) {
+/* One person's form in one tense, plus an optional grey alternative. */
+function personForm(v, tense, pk) {
+  const forms = v.t[tense];
+  if (!forms) return null;
+  const p = PKEYS.find(x => x.k === pk);
+  if (pk === 'vos') {
+    const vf = vosFormFor(v, tense);
+    if (vf && vf !== forms[1]) {
+      const alt = tense === 'sub_pres' || tense === 'imp_neg' ? forms[1] : null;
+      return { f: vf, alt };
+    }
+    return forms[1] ? { f: forms[1] } : null;
+  }
+  return forms[p.idx] ? { f: forms[p.idx] } : null;
+}
+
+function renderPersonView(v, force) {
+  if (S.person === 'vosotros' && !S.vosotros) S.person = 'vos';
+  const chips = PKEYS.filter(p => p.k !== 'vosotros' || S.vosotros).map(p =>
+    `<button class="pchip" data-p="${p.k}" aria-pressed="${p.k === S.person}">${esc(p.label)}</button>`).join('');
+  const line = (label, f, alt) => `<div class="pline${isHit(f) || isHit(alt) ? ' hit' : ''}" data-say="${esc(f)}">
+      <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">or ${esc(alt)}</span>` : ''}</span></div>`;
+  let html = `<div class="pchips" role="group" aria-label="Person">${chips}</div>`;
+  for (const [mk, m] of Object.entries(MOODS)) {
+    let rows = '';
+    if (mk === 'imp') {
+      const a = personForm(v, 'imp_aff', S.person), n = personForm(v, 'imp_neg', S.person);
+      if (a) rows += line('Afirmativo', a.f);
+      if (n) rows += line('Negativo', n.f, n.alt);
+    } else {
+      for (const t of m.tenses) {
+        if (!tenseVisible(t, force)) continue;
+        const pf = personForm(v, t, S.person);
+        if (!pf) continue;
+        rows += line(tenseLabel(t)[0], pf.f, pf.alt);
+      }
+    }
+    if (rows) html += `<div class="mood">${m.label}</div>${rows}`;
+  }
+  return html;
+}
+
+function renderTableView(v, force) {
+  const tabs = Object.entries(MOODS).map(([k, m]) =>
+    `<button data-v="${k}">${m.label}</button>`).join('');
+  const m = MOODS[S.mood] || MOODS.ind;
+  let body = m.tenses.filter(t => tenseVisible(t, force)).map(t => tenseTable(v, t)).join('');
+  if (S.mood === 'comp' && v.pp) body = `<p class="vosnote" style="margin:12px 0 0">All of these are a form of haber + <b>${esc(v.pp)}</b>.</p>` + body;
+  return `<div class="seg full moodtabs" id="mood-seg" role="radiogroup" aria-label="Mood">${tabs}</div>${body}`;
+}
+
+let current = null;   // { inf, ai, note, force }
+
+function renderVerb(inf, { note = '', ai = false, hit = null } = {}) {
   const v = ai ? AIVERBS[inf] : DATA.verbs[inf];
   if (!v) return;
   fillCompounds(v);
+  const force = hit && hit.tense;
+  if (hit) {
+    const mk = moodKeyOf(hit.tense);
+    if (mk) S.mood = mk;
+    const pk = personForHit(v, hit);
+    if (pk && S.byPerson) S.person = pk;
+    saveSettings();
+  }
+  current = { inf, ai, note, force };
   const out = $('#conj-out');
   const vp = v.vos || {};
   const tuSub = v.t.sub_pres && v.t.sub_pres[1];
@@ -326,19 +436,32 @@ function renderVerb(inf, { note = '', ai = false } = {}) {
       ${sayBtn(inf)}<span id="conj-star"></span>
     </div>
     ${v.ger || v.pp ? `<p class="parts">gerundio <b class="speakable" data-say="${esc(v.ger)}">${esc(v.ger)}</b> &nbsp; participio <b class="speakable" data-say="${esc(v.pp)}">${esc(v.pp)}</b></p>` : ''}
-    <div class="vosbox">
+    ${S.byPerson ? '' : `<div class="vosbox">
       ${cell('present', vp.ind_pres)}
       ${cell('command', vp.imp_aff)}
       ${cell("don't", vosNeg, tuNeg)}
       ${cell('subjunctive', vp.sub_pres, tuSub)}
     </div>
-    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">The tú subjunctive (${esc(tuSub)}) is the safer choice in writing; the vos form is common in speech.</p>` : ''}
-    <div class="mood">Indicativo</div>${IND.map(t => tenseTable(v, t)).join('')}
-    <div class="mood">Subjuntivo</div>${SUB.filter(t => t !== 'sub_imp_se' || S.se).map(t => tenseTable(v, t)).join('')}
-    <div class="mood">Imperativo</div>${IMP.map(t => tenseTable(v, t)).join('')}
+    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">The tú subjunctive (${esc(tuSub)}) is the safer choice in writing; the vos form is common in speech.</p>` : ''}`}
+    <div id="conj-body">${S.byPerson ? renderPersonView(v, force) : renderTableView(v, force)}</div>
   `;
   $('#conj-star').replaceWith(starBtn({ id: 'verb:' + inf, type: 'verb', key: inf, label: inf, sub: v.en || '', ai }));
+  wireConjBody();
+  const h = $('#conj-body .hit');
+  if (h && hit) setTimeout(() => h.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60);
   addHistory({ id: 'conj:' + inf, type: 'conj', key: inf, label: inf, sub: v.en || '', ai });
+}
+
+function rerenderBody() {
+  if (!current) return;
+  const v = current.ai ? AIVERBS[current.inf] : DATA.verbs[current.inf];
+  $('#conj-body').innerHTML = S.byPerson ? renderPersonView(v, current.force) : renderTableView(v, current.force);
+  wireConjBody();
+}
+function wireConjBody() {
+  const ms = $('#mood-seg');
+  if (ms) seg(ms, S.mood, k => { S.mood = k; saveSettings(); rerenderBody(); });
+  $$('.pchip').forEach(b => b.onclick = () => { S.person = b.dataset.p; saveSettings(); rerenderBody(); });
 }
 
 function looksLikeVerb(q) { return /^[a-záéíóúüñ\s]+$/i.test(q) && q.length > 1; }
@@ -346,23 +469,29 @@ function looksLikeVerb(q) { return /^[a-záéíóúüñ\s]+$/i.test(q) && q.leng
 function runConj() {
   const raw = $('#conj-q').value.trim();
   const out = $('#conj-out');
+  current = null;
   if (!DATA) { loading(out, 'Loading verbs…'); return; }
   if (!raw) {
+    lastQ = '';
     out.innerHTML = `<div class="empty">Type an infinitive for the full table, or paste any form you ran into, like <b>dijeran</b>, <b>sos</b> or <b>andate</b>, to find out what it is. Tap any form to hear it.</div>`;
     return;
   }
   const q = fold(raw);
   const direct = Object.keys(DATA.verbs).find(k => fold(k) === q);
+  lastQ = direct ? '' : q;
   if (direct) return renderVerb(direct);
   const aiDirect = Object.keys(AIVERBS).find(k => fold(k) === q);
-  if (aiDirect) return renderVerb(aiDirect, { ai: true });
+  if (aiDirect) { lastQ = ''; return renderVerb(aiDirect, { ai: true }); }
 
   const hits = REV.get(q) || [];
-  if (hits.length === 1) return renderVerb(hits[0].inf, { note: `${raw} is the ${describeHit(hits[0])}` });
+  if (hits.length === 1) return renderVerb(hits[0].inf, { note: `${raw} is the ${describeHit(hits[0])}`, hit: hits[0] });
   if (hits.length > 1) {
     out.innerHTML = `<p class="found">${esc(raw)} could be from more than one verb:</p>` +
-      hits.map(h => `<button class="pick" data-inf="${esc(h.inf)}" data-note="${esc(raw + ' is the ' + describeHit(h))}"><b>${esc(h.inf)}</b><span>${esc(describeHit(h))} · ${esc(DATA.verbs[h.inf].en)}</span></button>`).join('');
-    $$('.pick', out).forEach(b => b.onclick = () => renderVerb(b.dataset.inf, { note: b.dataset.note }));
+      hits.map((h, i) => `<button class="pick" data-h="${i}"><b>${esc(h.inf)}</b><span>${esc(describeHit(h))} · ${esc(DATA.verbs[h.inf].en)}</span></button>`).join('');
+    $$('.pick', out).forEach(b => b.onclick = () => {
+      const h = hits[+b.dataset.h];
+      renderVerb(h.inf, { note: `${raw} is the ${describeHit(h)}`, hit: h });
+    });
     return;
   }
   out.innerHTML = `<div class="empty">“${esc(raw)}” isn't one of the 638 verbs in the database.
@@ -396,10 +525,11 @@ async function aiConjugate(word) {
 
 let conjT;
 $('#conj-q').addEventListener('input', () => { clearTimeout(conjT); conjT = setTimeout(runConj, 150); });
-$('#opt-vosotros').checked = S.vosotros;
-$('#opt-se').checked = S.se;
-$('#opt-vosotros').onchange = e => { S.vosotros = e.target.checked; saveSettings(); runConj(); };
-$('#opt-se').onchange = e => { S.se = e.target.checked; saveSettings(); runConj(); };
+for (const [id, key] of [['opt-vosotros', 'vosotros'], ['opt-se', 'se'], ['opt-rare', 'rare'], ['opt-person', 'byPerson']]) {
+  const el = $('#' + id);
+  el.checked = !!S[key];
+  el.onchange = e => { S[key] = e.target.checked; saveSettings(); runConj(); };
+}
 
 function openVerb(inf) {
   go('conj', { focus: false });
@@ -579,15 +709,18 @@ $('#tr-go').onclick = () => {
 $('#tr-q').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#tr-go').click();
 });
-$('#tr-cam').addEventListener('change', async e => {
+$$('input[data-img]').forEach(inp => inp.addEventListener('change', async e => {
   const f = e.target.files && e.target.files[0];
+  const target = e.target.dataset.img;
   e.target.value = '';
   if (!f) return;
+  const out = target === 'tr' ? $('#tr-out') : $('#check-read');
   try {
     const b64 = await shrinkImage(f, 1568, 0.85);
-    runTranslate({ image: b64 });
-  } catch { failed($('#tr-out'), new Error("Couldn't open that image.")); }
-});
+    if (target === 'tr') runTranslate({ image: b64 });
+    else readForCheck(b64);
+  } catch { failed(out, new Error("Couldn't open that image.")); }
+}));
 function shrinkImage(file, maxSide, quality) {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -631,6 +764,34 @@ pattern: one sentence naming the single most useful thing to work on, based on t
 If nothing needs fixing, return the text unchanged and an empty changes array.`;
 }
 
+const READ_SYS = `You transcribe text from a photo so a Spanish learner can have it corrected afterwards.
+The photo may be handwriting or printed / on-screen text.
+Transcribe EXACTLY what is written. Do not correct anything: keep spelling mistakes, missing or wrong accents, wrong genders, wrong verb forms, odd punctuation and capitalisation exactly as they appear. Correcting it would defeat the purpose.
+Keep the original line breaks only where they mark a new paragraph or list item; join lines that just wrapped.
+If a word is genuinely illegible, write your best guess followed by [?].
+Reply with JSON only, no prose, no code fences: {"text":str,"unsure":int (how many [?] marks you used)}
+If there is no readable text, reply {"error":"no text"}.`;
+
+async function readForCheck(b64) {
+  const box = $('#check-read');
+  $('#check-out').innerHTML = '';
+  loading(box, 'Reading your photo…');
+  try {
+    const d = await ask({
+      system: READ_SYS, maxTokens: 2500,
+      content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+                { type: 'text', text: 'Transcribe this exactly, errors and all.' }]
+    });
+    if (d.error || !d.text) throw new Error("Couldn't find readable text in that photo.");
+    $('#check-q').value = d.text;
+    box.innerHTML = `<div class="readnote">
+      <img class="thumb small" src="data:image/jpeg;base64,${b64}" alt="Your photo">
+      <p>This is what I read, mistakes kept on purpose. Fix anything I misread${d.unsure ? ` (look for [?], ${d.unsure} spot${d.unsure > 1 ? 's' : ''})` : ''}, then tap <b>Check it</b>.</p>
+    </div>`;
+    $('#check-q').scrollIntoView({ block: 'start', behavior: 'smooth' });
+  } catch (e) { failed(box, e); }
+}
+
 async function runCheck(text, cached) {
   const out = $('#check-out');
   if (cached) return renderCheck(text, cached);
@@ -667,7 +828,7 @@ function renderCheck(text, d) {
 }
 $('#check-go').onclick = () => {
   const t = $('#check-q').value.trim();
-  if (t) { $('#check-q').blur(); runCheck(t); }
+  if (t) { $('#check-q').blur(); $('#check-read').innerHTML = ''; runCheck(t); }
 };
 
 /* word-level diff (LCS) */
@@ -711,30 +872,11 @@ function diffHTML(a, b) {
 }
 
 /* ============================================================
-   SHEETS: saved · history · settings
+   MORE: saved · history · settings
    ============================================================ */
-function openSheet(kind) {
-  $('#sheet-title').textContent = { saved: 'Saved', history: 'History', settings: 'Settings' }[kind];
-  renderSheet(kind);
-  $('#scrim').hidden = false; $('#sheet').hidden = false;
-  if (!history.state || !history.state.sheet) history.pushState({ sheet: kind }, '', location.hash);
-  document.body.style.overflow = 'hidden';
-}
-function closeSheet(fromPop) {
-  if ($('#sheet').hidden) return;
-  $('#scrim').hidden = true; $('#sheet').hidden = true;
-  document.body.style.overflow = '';
-  if (!fromPop && history.state && history.state.sheet) history.back();
-}
-window.addEventListener('popstate', () => closeSheet(true));
-$('#scrim').onclick = () => closeSheet();
-$('#sheet-close').onclick = () => closeSheet();
-$$('[data-sheet]').forEach(b => b.onclick = () => openSheet(b.dataset.sheet));
-
 const KIND = { conj: 'verb', verb: 'verb', word: 'word', tr: 'translation', check: 'check' };
 
 function reopen(item) {
-  closeSheet();
   if (item.type === 'conj' || item.type === 'verb') {
     if (item.ai && !AIVERBS[item.key]) return toast('That AI verb is no longer cached.');
     return openVerb(item.key);
@@ -761,14 +903,14 @@ function listHTML(items, empty, removable) {
   </div>`).join('');
 }
 
-function renderSheet(kind) {
-  const body = $('#sheet-body');
+function renderMore(kind) {
+  const body = $('#more-body');
   if (kind === 'saved') {
     body.innerHTML = listHTML(SAVED, 'Nothing saved yet. Tap the star on a verb, word or translation to keep it here.', true) +
       (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">Copy list as text</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(SAVED[+b.dataset.i]));
     $$('[data-rm]', body).forEach(b => b.onclick = () => {
-      SAVED.splice(+b.dataset.rm, 1); store.set('vos.saved', SAVED); renderSheet('saved');
+      SAVED.splice(+b.dataset.rm, 1); store.set('vos.saved', SAVED); renderMore('saved');
     });
     const ex = $('#export', body);
     if (ex) ex.onclick = async () => {
@@ -781,7 +923,7 @@ function renderSheet(kind) {
       (HIST.length ? `<div class="settings-row"><button class="ghost" id="clear-h">Clear history</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(HIST[+b.dataset.i]));
     const c = $('#clear-h', body);
-    if (c) c.onclick = () => { HIST = []; store.set('vos.history', HIST); renderSheet('history'); };
+    if (c) c.onclick = () => { HIST = []; store.set('vos.history', HIST); renderMore('history'); };
   }
   if (kind === 'settings') {
     const masked = S.key ? S.key.slice(0, 10) + '…' + S.key.slice(-4) : '';
@@ -811,10 +953,10 @@ function renderSheet(kind) {
       const v = $('#set-key').value.trim();
       if (!v) return toast('Paste a key first');
       if (!/^sk-ant-/.test(v)) toast("That doesn't look like an Anthropic key, saved anyway");
-      S.key = v; saveSettings(); renderSheet('settings'); toast('Key saved');
+      S.key = v; saveSettings(); renderMore('settings'); toast('Key saved');
     };
     const del = $('#del-key');
-    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderSheet('settings'); toast('Key removed'); };
+    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderMore('settings'); toast('Key removed'); };
     $('#test-key').onclick = async () => {
       const b = $('#test-key'); b.disabled = true; b.textContent = 'Testing…';
       try {
@@ -828,7 +970,7 @@ function renderSheet(kind) {
       b.disabled = false; b.textContent = 'Test';
     };
     $('#set-model').onchange = e => { S.model = e.target.value; saveSettings(); toast('Model updated'); };
-    $('#clear-ai').onclick = () => { AIVERBS = {}; store.set('vos.aiverbs', AIVERBS); renderSheet('settings'); };
+    $('#clear-ai').onclick = () => { AIVERBS = {}; store.set('vos.aiverbs', AIVERBS); renderMore('settings'); };
   }
 }
 
@@ -836,6 +978,7 @@ function renderSheet(kind) {
    BOOT
    ============================================================ */
 paintDir();
+seg($('#more-seg'), S.moreTab, v => { S.moreTab = v; saveSettings(); renderMore(v); });
 go(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : S.view, { focus: false });
 runConj();
 loadVerbs();

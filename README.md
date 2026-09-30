@@ -10,7 +10,7 @@ A personal Spanish reference for Android, tuned for Uruguay. Installable as an a
 
 1. Open the site in Chrome.
 2. Menu, then **Add to home screen** (or **Install app**).
-3. Open it, tap the gear, paste your Anthropic API key, tap **Test**.
+3. Open it, go to **More → Settings**, paste your Anthropic API key, tap **Test**.
 
 The key is stored only in that browser on that phone. It is never in this repo. Set a monthly spend limit in the Anthropic Console.
 

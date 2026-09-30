@@ -229,3 +229,46 @@ input[type=search]::-webkit-search-cancel-button { filter: grayscale(1); }
   @keyframes rise { from { opacity: 0; transform: translateY(4px); } }
   @keyframes up { from { transform: translateY(24px); opacity: .6; } }
 }
+
+/* ---------- v1.1 ---------- */
+body { padding-top: calc(env(safe-area-inset-top) + 12px); }
+.tabs button { font-size: 11px; }
+.tabs button span { white-space: nowrap; }
+
+.seg.full { display: flex; width: 100%; }
+.seg.full button { padding: 8px 4px; }
+.moodtabs { margin: 18px 0 4px; }
+.moodtabs button { font-size: 13px; }
+.moodtabs + .tense, .moodtabs + .vosnote { margin-top: 10px; }
+
+.pchips { display: flex; gap: 6px; overflow-x: auto; margin: 16px -16px 4px; padding: 2px 16px; scrollbar-width: none; }
+.pchips::-webkit-scrollbar { display: none; }
+.pchip {
+  flex: none; border: 1px solid var(--line); background: var(--surface); color: var(--muted);
+  font-size: 14px; padding: 7px 13px; border-radius: 99px; cursor: pointer;
+}
+.pchip[aria-pressed=true] { background: var(--celeste); border-color: var(--celeste); color: #fff; font-weight: 600; }
+@media (prefers-color-scheme: dark) { .pchip[aria-pressed=true] { color: #0E1620; } }
+
+.pline { display: flex; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--line); cursor: pointer; }
+.pline .t { width: 44%; flex: none; font-size: 13px; color: var(--muted); padding-right: 8px; }
+.pline .f { font-family: var(--serif); font-size: 18px; }
+.pline .alt { font: 13px var(--sans); color: var(--muted); margin-left: 8px; }
+.pline:active { background: var(--celeste-soft); }
+
+.frow.hit, .pline.hit { background: var(--celeste-soft); border-radius: 8px; padding-left: 8px; padding-right: 8px; margin: 0 -8px; }
+.frow.hit .f, .pline.hit .f { font-weight: 600; }
+
+.row .cam { flex: none; width: 44px; height: 46px; }
+#view-tr .row .primary { padding: 12px 14px; }
+
+.readnote { display: flex; gap: 12px; align-items: flex-start; background: var(--celeste-soft); border-radius: 14px; padding: 12px; margin: 8px 0; font-size: 14px; }
+.readnote p { margin: 0; }
+.thumb.small { width: 64px; height: 64px; object-fit: cover; margin: 0; flex: none; }
+
+#view-more .seg.full { margin: 4px 0 8px; }
+
+.chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 -16px 6px; padding: 2px 16px; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+.chip { flex: none; }
+.chip span { padding: 5px 11px; }

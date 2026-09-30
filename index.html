@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="es-UY">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F6F8FA" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0E1620" media="(prefers-color-scheme: dark)">
+<meta name="description" content="Conjugate, look up, translate and check Spanish, tuned for Uruguay.">
+<title>Vos</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <button class="brand" data-go="conj" aria-label="Vos, home">vos</button>
+  <div class="top-actions">
+    <button class="icon" data-sheet="saved" aria-label="Saved">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg>
+    </button>
+    <button class="icon" data-sheet="history" aria-label="History">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4M12 8v4.5l3 1.8"/></svg>
+    </button>
+    <button class="icon" data-sheet="settings" aria-label="Settings">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- Conjugate -->
+<section class="view" id="view-conj" data-view="conj">
+  <div class="searchbar">
+    <input type="search" id="conj-q" placeholder="hablar, dijeran, andate…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+  </div>
+  <div class="chips">
+    <label class="chip"><input type="checkbox" id="opt-vosotros"><span>Vosotros</span></label>
+    <label class="chip"><input type="checkbox" id="opt-se"><span>-se subjunctive</span></label>
+  </div>
+  <div id="conj-out"></div>
+</section>
+
+<!-- Word -->
+<section class="view" id="view-word" data-view="word" hidden>
+  <form class="searchbar" id="word-form">
+    <input type="search" id="word-q" placeholder="una palabra, or an English word" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <button class="primary" type="submit">Look up</button>
+  </form>
+  <div id="word-out"></div>
+</section>
+
+<!-- Translate -->
+<section class="view" id="view-tr" data-view="tr" hidden>
+  <div class="dirbar">
+    <span id="tr-from">Auto</span>
+    <button class="icon small" id="tr-swap" aria-label="Swap direction">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
+    </button>
+    <span id="tr-to">…</span>
+  </div>
+  <textarea id="tr-q" rows="4" placeholder="Type English or Spanish" spellcheck="false"></textarea>
+  <div class="row">
+    <div class="seg" id="tr-reg" role="radiogroup" aria-label="Register">
+      <button data-v="casual">Casual</button><button data-v="formal">Formal</button>
+    </div>
+    <label class="icon cam" aria-label="Translate a photo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <input type="file" id="tr-cam" accept="image/*" hidden>
+    </label>
+    <button class="primary" id="tr-go">Translate</button>
+  </div>
+  <div id="tr-out"></div>
+</section>
+
+<!-- Check -->
+<section class="view" id="view-check" data-view="check" hidden>
+  <textarea id="check-q" rows="6" placeholder="Escribí algo y te lo corrijo." spellcheck="false"></textarea>
+  <div class="row wrap">
+    <div class="seg" id="check-reg" role="radiogroup" aria-label="Register">
+      <button data-v="casual">Casual</button><button data-v="formal">Formal</button>
+    </div>
+    <div class="seg" id="check-mode" role="radiogroup" aria-label="How strict">
+      <button data-v="errors">Errors only</button><button data-v="push">Push me</button>
+    </div>
+  </div>
+  <div class="row"><button class="primary grow" id="check-go">Check it</button></div>
+  <div id="check-out"></div>
+</section>
+
+</main>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" data-go="conj">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>Conjugate</span>
+  </button>
+  <button role="tab" data-go="word">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M9 9h6M9 13h4"/></svg><span>Word</span>
+  </button>
+  <button role="tab" data-go="tr">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h9M7.5 3v2c0 4-2 7-4.5 8.5M5 9c1.5 2.5 3.5 4 6 4.5M13 21l4-10 4 10M14.5 17.5h5"/></svg><span>Translate</span>
+  </button>
+  <button role="tab" data-go="check">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l4-1 11-11-3-3L5 15zM14 6l3 3"/></svg><span>Check</span>
+  </button>
+</nav>
+
+<!-- Sheets -->
+<div class="scrim" id="scrim" hidden></div>
+<aside class="sheet" id="sheet" hidden aria-modal="true" role="dialog">
+  <div class="sheet-head">
+    <h2 id="sheet-title"></h2>
+    <button class="icon" id="sheet-close" aria-label="Close">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div id="sheet-body"></div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="app.js" defer></script>
+</body>
+</html>

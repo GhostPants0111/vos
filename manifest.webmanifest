@@ -1,0 +1,21 @@
+{
+  "name": "Vos",
+  "short_name": "Vos",
+  "description": "Conjugate, look up, translate and check Spanish, tuned for Uruguay.",
+  "lang": "es-UY",
+  "start_url": "./#conj",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F6F8FA",
+  "theme_color": "#2270B0",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Translate", "url": "./#tr", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Check", "url": "./#check", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

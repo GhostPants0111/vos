@@ -288,3 +288,30 @@ body { padding-top: calc(env(safe-area-inset-top) + 12px); }
 .rline b { font: 400 16px var(--serif); }
 .rk { display: inline-block; min-width: 58px; font-size: 12px; font-weight: 600; color: var(--muted); margin-right: 6px; }
 .rline .rm { color: var(--muted); font-size: 13px; }
+
+/* ---------- v1.3 ---------- */
+.tawrap { position: relative; }
+.tawrap textarea { padding-right: 44px; }
+.tawrap .clear { position: absolute; top: 6px; right: 6px; }
+
+.interim { margin: 6px 2px 0; font: italic 16px var(--serif); color: var(--muted); }
+
+.mic.live { background: var(--warn); border-color: var(--warn); color: #fff; }
+@media (prefers-reduced-motion: no-preference) {
+  .mic.live { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--warn) 25%, transparent); } }
+}
+.langbtn { font: 600 13px var(--sans); color: var(--celeste); cursor: pointer; }
+
+.stage { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; margin: 10px 0; }
+.stage-img { display: flex; justify-content: center; background: var(--bg); border-radius: 10px; overflow: hidden; }
+.stage-img canvas { max-width: 100%; max-height: 300px; height: auto; width: auto; display: block; }
+.stage .row { margin: 10px 0 0; }
+
+.zoomable { cursor: zoom-in; }
+.viewer {
+  position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 20, .92);
+  overflow: auto; display: flex; align-items: flex-start; justify-content: center;
+  padding: calc(env(safe-area-inset-top) + 12px) 8px 12px;
+}
+.viewer img { max-width: 100%; height: auto; display: block; }

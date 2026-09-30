@@ -5,10 +5,10 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.2.0';
+const VERSION = '1.3.0';
 const MODELS = {
-  'claude-haiku-4-5': 'Haiku 4.5 (fast, cheapest)',
-  'claude-sonnet-5-5': 'Sonnet 5.5 (sharper, pricier)'
+  'claude-haiku-4-5': 'Haiku 4.5 (rápido, el más barato)',
+  'claude-sonnet-5-5': 'Sonnet 5.5 (más preciso, más caro)'
 };
 
 const $ = (s, r = document) => r.querySelector(s);
@@ -30,7 +30,7 @@ const store = {
 };
 
 const DEFAULTS = {
-  key: '', model: 'claude-haiku-4-5',
+  key: '', model: 'claude-haiku-4-5', readModel: 'claude-sonnet-5-5', explain: 'es',
   vosotros: false, se: false, rare: false,
   byPerson: false, person: 'vos', mood: 'ind',
   trReg: 'casual', checkReg: 'formal', checkMode: 'push',
@@ -65,7 +65,7 @@ if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = pickVoice;
 }
 function say(text) {
-  if (!('speechSynthesis' in window)) return toast('Speech is not available on this device.');
+  if (!('speechSynthesis' in window)) return toast('Este dispositivo no puede leer en voz alta.');
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(String(text).replace(/^no\s+/, 'no '));
   u.lang = esVoice ? esVoice.lang : 'es-UY';
@@ -87,10 +87,10 @@ function isSaved(id) { return SAVED.some(s => s.id === id); }
 function toggleSave(item) {
   if (isSaved(item.id)) {
     SAVED = SAVED.filter(s => s.id !== item.id);
-    toast('Removed from saved');
+    toast('Quitado de guardados');
   } else {
     SAVED.unshift(Object.assign({ ts: Date.now() }, item));
-    toast('Saved');
+    toast('Guardado');
   }
   store.set('vos.saved', SAVED);
   return isSaved(item.id);
@@ -109,23 +109,24 @@ function starBtn(item) {
   const on = isSaved(item.id);
   const b = document.createElement('button');
   b.className = 'icon' + (on ? ' on' : '');
-  b.setAttribute('aria-label', on ? 'Remove from saved' : 'Save');
+  b.setAttribute('aria-label', on ? 'Quitar de guardados' : 'Guardar');
   b.innerHTML = STAR;
   b.onclick = () => {
     const now = toggleSave(item);
     b.classList.toggle('on', now);
-    b.setAttribute('aria-label', now ? 'Remove from saved' : 'Save');
+    b.setAttribute('aria-label', now ? 'Quitar de guardados' : 'Guardar');
   };
   return b;
 }
 function sayBtn(text) {
-  return `<button class="icon" data-say="${esc(text)}" aria-label="Listen">${SPEAKER}</button>`;
+  return `<button class="icon" data-say="${esc(text)}" aria-label="Escuchar">${SPEAKER}</button>`;
 }
 
 /* ---------------- navigation ---------------- */
 const VIEWS = ['conj', 'word', 'tr', 'check', 'more'];
 function go(view, { focus = true } = {}) {
   if (!VIEWS.includes(view)) view = 'conj';
+  stopDictation();
   for (const v of VIEWS) $(`[data-view="${v}"]`).hidden = v !== view;
   $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.go === view)));
   S.view = view; saveSettings();
@@ -154,10 +155,11 @@ const UY = `Target variety: Uruguayan Spanish as used in Montevideo today. Not p
 - Informal register uses voseo (vos tenés, vení, fijate). Formal register uses usted. Never use vosotros.
 - Prefer Uruguayan vocabulary where it differs: ómnibus (bus), championes (sneakers), campera (jacket), gurí/gurisa (kid), liceo (secondary school), frutilla, boniato, morrón, remera, celular, auto, almacén, "ta" (ok).
 - In casual text, Uruguayans often mix tú with voseo verbs ("tú sabés"). That is real usage here; do not treat it as an error in casual register.`;
+const EXPL = () => S.explain === 'en' ? 'English' : 'Spanish (natural Uruguayan Spanish, voseo where it fits)';
 
-async function ask({ system, content, maxTokens = 1200 }) {
-  if (!S.key) throw new Error('Add your Anthropic API key first: More tab, then Settings.');
-  if (!navigator.onLine) throw new Error("You're offline. Conjugate still works; this needs a connection.");
+async function ask({ system, content, maxTokens = 1200, model }) {
+  if (!S.key) throw new Error('Primero agregá tu clave de API de Anthropic: Más → Ajustes.');
+  if (!navigator.onLine) throw new Error('Estás sin conexión. Conjugar funciona igual; esto necesita internet.');
   let r;
   try {
     r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -169,21 +171,21 @@ async function ask({ system, content, maxTokens = 1200 }) {
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: S.model, max_tokens: maxTokens, system,
+        model: model || S.model, max_tokens: maxTokens, system,
         messages: [{ role: 'user', content }]
       })
     });
   } catch {
-    throw new Error("Couldn't reach the API. Check your connection and try again.");
+    throw new Error('No se pudo conectar con la API. Revisá la conexión y probá de nuevo.');
   }
   if (!r.ok) {
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
-    if (r.status === 401) throw new Error('The API key was rejected. Check it in Settings.');
-    if (r.status === 429) throw new Error('Rate limited. Wait a few seconds and try again.');
-    if (r.status === 529 || r.status === 503) throw new Error('The API is overloaded right now. Try again in a moment.');
-    if (r.status === 400 && /credit/i.test(detail)) throw new Error('Your Anthropic account is out of credit. Top up in the Console.');
-    throw new Error(`API error ${r.status}${detail ? ': ' + detail : ''}`);
+    if (r.status === 401) throw new Error('La clave de API fue rechazada. Revisala en Ajustes.');
+    if (r.status === 429) throw new Error('Demasiadas consultas seguidas. Esperá unos segundos y probá de nuevo.');
+    if (r.status === 529 || r.status === 503) throw new Error('La API está saturada. Probá de nuevo en un rato.');
+    if (r.status === 400 && /credit/i.test(detail)) throw new Error('Tu cuenta de Anthropic se quedó sin crédito. Cargá saldo en la Console.');
+    throw new Error(`Error de la API ${r.status}${detail ? ': ' + detail : ''}`);
   }
   const d = await r.json();
   const text = (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
@@ -191,9 +193,9 @@ async function ask({ system, content, maxTokens = 1200 }) {
 }
 function parseJSON(text) {
   const a = text.indexOf('{'), b = text.lastIndexOf('}');
-  if (a < 0 || b < a) throw new Error('Got an unexpected reply. Try again.');
+  if (a < 0 || b < a) throw new Error('Llegó una respuesta inesperada. Probá de nuevo.');
   try { return JSON.parse(text.slice(a, b + 1)); }
-  catch { throw new Error('Got an unreadable reply. Try again.'); }
+  catch { throw new Error('Llegó una respuesta ilegible. Probá de nuevo.'); }
 }
 function loading(el, msg) { el.innerHTML = `<p class="msg"><span class="spinner"></span>${esc(msg)}</p>`; }
 function failed(el, e) { el.innerHTML = `<p class="msg err">${esc(e.message || e)}</p>`; }
@@ -243,7 +245,7 @@ async function loadVerbs() {
     buildRev();
     runConj();
   } catch {
-    $('#conj-out').innerHTML = `<p class="msg err">Couldn't load the verb data. Reload the app once while online.</p>`;
+    $('#conj-out').innerHTML = `<p class="msg err">No se pudieron cargar los verbos. Abrí la app una vez con conexión.</p>`;
   }
 }
 
@@ -279,17 +281,17 @@ function tenseName(t) {
   return (DATA && DATA.tenses[t]) || [t, ''];
 }
 function moodOf(t) {
-  if (t.startsWith('ind')) return 'indicative';
-  if (t.startsWith('sub')) return 'subjunctive';
-  if (t.startsWith('imp')) return 'imperative';
+  if (t.startsWith('ind')) return 'indicativo';
+  if (t.startsWith('sub')) return 'subjuntivo';
+  if (t.startsWith('imp')) return 'imperativo';
   return '';
 }
 function describeHit(h) {
-  const [, en] = tenseName(h.tense);
-  const m = moodOf(h.tense);
+  const [es] = tenseName(h.tense);
+  const m = COMPOUND[h.tense] ? '' : moodOf(h.tense);
   const WHO = ['yo', 'tú', 'él/usted', 'nosotros', 'vosotros', 'ellos/ustedes'];
   const who = h.i === 'vos' ? 'vos' : (h.i >= 0 ? WHO[h.i] : '');
-  return `${en.toLowerCase()}${m ? ' ' + m : ''}${who ? ', ' + who : ''} of ${h.inf}`;
+  return `${es.toLowerCase()}${m ? ' de ' + m : ''}${who ? ', ' + who : ''}, de ${h.inf}`;
 }
 
 function vosFormFor(v, tense) {
@@ -374,8 +376,8 @@ function renderPersonView(v, force) {
   const chips = PKEYS.filter(p => p.k !== 'vosotros' || S.vosotros).map(p =>
     `<button class="pchip" data-p="${p.k}" aria-pressed="${p.k === S.person}">${esc(p.label)}</button>`).join('');
   const line = (label, f, alt) => `<div class="pline${isHit(f) || isHit(alt) ? ' hit' : ''}" data-say="${esc(f)}">
-      <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">or ${esc(alt)}</span>` : ''}</span></div>`;
-  let html = `<div class="pchips" role="group" aria-label="Person">${chips}</div>`;
+      <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">o ${esc(alt)}</span>` : ''}</span></div>`;
+  let html = `<div class="pchips" role="group" aria-label="Persona">${chips}</div>`;
   for (const [mk, m] of Object.entries(MOODS)) {
     let rows = '';
     if (mk === 'imp') {
@@ -400,8 +402,8 @@ function renderTableView(v, force) {
     `<button data-v="${k}">${m.label}</button>`).join('');
   const m = MOODS[S.mood] || MOODS.ind;
   let body = m.tenses.filter(t => tenseVisible(t, force)).map(t => tenseTable(v, t)).join('');
-  if (S.mood === 'comp' && v.pp) body = `<p class="vosnote" style="margin:12px 0 0">All of these are a form of haber + <b>${esc(v.pp)}</b>.</p>` + body;
-  return `<div class="seg full moodtabs" id="mood-seg" role="radiogroup" aria-label="Mood">${tabs}</div>${body}`;
+  if (S.mood === 'comp' && v.pp) body = `<p class="vosnote" style="margin:12px 0 0">Todos se forman con haber + <b>${esc(v.pp)}</b>.</p>` + body;
+  return `<div class="seg full moodtabs" id="mood-seg" role="radiogroup" aria-label="Modo">${tabs}</div>${body}`;
 }
 
 let current = null;   // { inf, ai, note, force }
@@ -425,24 +427,24 @@ function renderVerb(inf, { note = '', ai = false, hit = null } = {}) {
   const tuNeg = v.t.imp_neg && v.t.imp_neg[1];
   const vosNeg = vp.sub_pres ? 'no ' + vp.sub_pres : null;
   const cell = (label, f, alt) => f
-    ? `<span class="k">${label}</span><span class="v speakable" data-say="${esc(f)}">${esc(f)}${alt && alt !== f ? `<span class="alt">or ${esc(alt)}</span>` : ''}</span>`
+    ? `<span class="k">${label}</span><span class="v speakable" data-say="${esc(f)}">${esc(f)}${alt && alt !== f ? `<span class="alt">o ${esc(alt)}</span>` : ''}</span>`
     : '';
 
   out.innerHTML = `
     ${note ? `<p class="found">${esc(note)}</p>` : ''}
-    ${ai ? `<div class="aiwarn">Not in the verb database, so these tables are AI-generated. Double-check anything that matters.</div>` : ''}
+    ${ai ? `<div class="aiwarn">Este verbo no está en la base, así que las tablas las generó la IA. Verificá lo que sea importante.</div>` : ''}
     <div class="lemma-head">
       <div style="flex:1"><div class="lemma">${esc(inf)}</div><div class="gloss">${esc(v.en || '')}</div></div>
       ${sayBtn(inf)}<span id="conj-star"></span>
     </div>
     ${v.ger || v.pp ? `<p class="parts">gerundio <b class="speakable" data-say="${esc(v.ger)}">${esc(v.ger)}</b> &nbsp; participio <b class="speakable" data-say="${esc(v.pp)}">${esc(v.pp)}</b></p>` : ''}
     ${S.byPerson ? '' : `<div class="vosbox">
-      ${cell('present', vp.ind_pres)}
-      ${cell('command', vp.imp_aff)}
-      ${cell("don't", vosNeg, tuNeg)}
-      ${cell('subjunctive', vp.sub_pres, tuSub)}
+      ${cell('presente', vp.ind_pres)}
+      ${cell('imperativo', vp.imp_aff)}
+      ${cell('negativo', vosNeg, tuNeg)}
+      ${cell('subjuntivo', vp.sub_pres, tuSub)}
     </div>
-    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">The tú subjunctive (${esc(tuSub)}) is the safer choice in writing; the vos form is common in speech.</p>` : ''}`}
+    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">Por escrito, el subjuntivo con tú (${esc(tuSub)}) es lo más seguro; la forma de vos es común al hablar.</p>` : ''}`}
     <div id="conj-body">${S.byPerson ? renderPersonView(v, force) : renderTableView(v, force)}</div>
   `;
   $('#conj-star').replaceWith(starBtn({ id: 'verb:' + inf, type: 'verb', key: inf, label: inf, sub: v.en || '', ai }));
@@ -470,10 +472,10 @@ function runConj() {
   const raw = $('#conj-q').value.trim();
   const out = $('#conj-out');
   current = null;
-  if (!DATA) { loading(out, 'Loading verbs…'); return; }
+  if (!DATA) { loading(out, 'Cargando verbos…'); return; }
   if (!raw) {
     lastQ = '';
-    out.innerHTML = `<div class="empty">Type an infinitive for the full table, or paste any form you ran into, like <b>dijeran</b>, <b>sos</b> or <b>andate</b>, to find out what it is. Tap any form to hear it.</div>`;
+    out.innerHTML = `<div class="empty">Escribí un infinitivo para ver todas sus formas, o pegá cualquier forma que te encontraste, como <b>dijeran</b>, <b>sos</b> o <b>andate</b>, para saber qué es. Tocá una forma para escucharla.</div>`;
     return;
   }
   const q = fold(raw);
@@ -484,18 +486,18 @@ function runConj() {
   if (aiDirect) { lastQ = ''; return renderVerb(aiDirect, { ai: true }); }
 
   const hits = REV.get(q) || [];
-  if (hits.length === 1) return renderVerb(hits[0].inf, { note: `${raw} is the ${describeHit(hits[0])}`, hit: hits[0] });
+  if (hits.length === 1) return renderVerb(hits[0].inf, { note: `${raw}: ${describeHit(hits[0])}`, hit: hits[0] });
   if (hits.length > 1) {
-    out.innerHTML = `<p class="found">${esc(raw)} could be from more than one verb:</p>` +
+    out.innerHTML = `<p class="found">${esc(raw)} puede ser de más de un verbo:</p>` +
       hits.map((h, i) => `<button class="pick" data-h="${i}"><b>${esc(h.inf)}</b><span>${esc(describeHit(h))} · ${esc(DATA.verbs[h.inf].en)}</span></button>`).join('');
     $$('.pick', out).forEach(b => b.onclick = () => {
       const h = hits[+b.dataset.h];
-      renderVerb(h.inf, { note: `${raw} is the ${describeHit(h)}`, hit: h });
+      renderVerb(h.inf, { note: `${raw}: ${describeHit(h)}`, hit: h });
     });
     return;
   }
-  out.innerHTML = `<div class="empty">“${esc(raw)}” isn't one of the 638 verbs in the database.
-    ${looksLikeVerb(raw) ? `<div class="row"><button class="ghost" id="ai-conj">Ask AI to conjugate it</button></div>` : ''}</div>`;
+  out.innerHTML = `<div class="empty">“${esc(raw)}” no está entre los 638 verbos de la base.
+    ${looksLikeVerb(raw) ? `<div class="row"><button class="ghost" id="ai-conj">Pedirle a la IA que lo conjugue</button></div>` : ''}</div>`;
   const b = $('#ai-conj');
   if (b) b.onclick = () => aiConjugate(raw);
 }
@@ -513,10 +515,10 @@ vos.sub_pres uses the Rioplatense stress (podás, not puedás).`;
 
 async function aiConjugate(word) {
   const out = $('#conj-out');
-  loading(out, `Conjugating ${word}…`);
+  loading(out, `Conjugando ${word}…`);
   try {
     const d = await ask({ system: CONJ_SYS, content: word, maxTokens: 2000 });
-    if (d.error || !d.infinitive || !d.t) throw new Error(`“${word}” doesn't look like a Spanish verb.`);
+    if (d.error || !d.infinitive || !d.t) throw new Error(`“${word}” no parece un verbo en español.`);
     AIVERBS[d.infinitive] = { en: d.en, ger: d.ger, pp: d.pp, t: d.t, vos: d.vos || {}, g: {} };
     store.set('vos.aiverbs', AIVERBS);
     renderVerb(d.infinitive, { ai: true });
@@ -540,7 +542,7 @@ function openVerb(inf) {
 /* ============================================================
    WORD
    ============================================================ */
-const WORD_SYS = `You are a Spanish lexicographer writing for an English speaker who lives in Uruguay, level B2 working toward C1.
+function wordSystem() { return `You are a Spanish lexicographer writing for an English speaker who lives in Uruguay, level B2 working toward C1.
 ${UY}
 The input is a single word or short expression, in Spanish or English.
 - Spanish input: explain that word. Give 2 entries only if it is a homograph with unrelated meanings (el/la capital, el/la cura).
@@ -549,7 +551,7 @@ Reply with JSON only, no prose, no code fences:
 {"query_lang":"es"|"en","entries":[{
   "word":str,
   "gender":"el"|"la"|"el/la"|null,
-  "pos":str (e.g. "noun", "verb", "adjective", "adverb", "expression"),
+  "pos":str (in Spanish: "sustantivo", "verbo", "adjetivo", "adverbio", "expresión"),
   "verb_infinitive":str|null (the infinitive if this entry is a verb),
   "senses":[{"def":str (English, short),"example":str (natural Uruguayan Spanish sentence),"example_en":str}],
   "synonyms":[str],
@@ -576,17 +578,18 @@ roots: help the learner decode and remember the word.
 - origin: ONE short line (e.g. "Latin cooperire, to cover completely"; "Arabic al-mujadda, cushion"). Only when the origin is clear and well established. If you are not sure, use null. Never invent an etymology.
 - family: 3 to 6 common related Spanish words sharing the root, each with a short English meaning. Empty array if none.
 - english: an English word sharing the root when it helps memory ("cover, discover"), else null. false_friend true if the resemblance is misleading.
-Use null for roots only for interjections, slang like "ta", or proper nouns.`;
+Use null for roots only for interjections, slang like "ta", or proper nouns.
+Language: def, example_en and every meaning inside roots are in English. The "uruguay" and "careful" notes are written in ${EXPL()}.`; }
 
 async function runWord(q, cached) {
   const out = $('#word-out');
   if (!q) return;
   $('#word-q').value = q;
   if (cached) return renderWord(q, cached);
-  loading(out, `Looking up ${q}…`);
+  loading(out, `Buscando ${q}…`);
   $('#word-form button').disabled = true;
   try {
-    const d = await ask({ system: WORD_SYS, content: q, maxTokens: 2200 });
+    const d = await ask({ system: wordSystem(), content: q, maxTokens: 2200 });
     renderWord(q, d);
     addHistory({ id: 'word:' + fold(q), type: 'word', key: q, label: q, sub: summarizeWord(d), data: d });
   } catch (e) { failed(out, e); }
@@ -601,19 +604,19 @@ function summarizeWord(d) {
 function rootsHTML(r) {
   if (!r || !((r.parts && r.parts.length) || (r.family && r.family.length) || r.origin)) return '';
   const parts = (r.parts || []).filter(p => p && p.part);
-  return `<details class="roots"><summary>Roots</summary>
+  return `<details class="roots"><summary>Raíces</summary>
     ${parts.length ? `<p class="rparts">${parts.map(p => `<b>${esc(p.part)}</b> <span>${esc(p.meaning || '')}</span>`).join('<i>+</i>')}</p>` : ''}
     ${r.literal ? `<p class="rlit">→ ${esc(r.literal)}</p>` : ''}
-    ${r.origin ? `<p class="rline"><span class="rk">Origin</span>${esc(r.origin)}</p>` : ''}
-    ${r.family && r.family.length ? `<p class="rline"><span class="rk">Family</span>${r.family.map(f => `<b>${esc(f.word)}</b> <span class="rm">${esc(f.meaning || '')}</span>`).join('<span class="rm"> · </span>')}</p>` : ''}
-    ${r.english ? `<p class="rline"><span class="rk">English</span>${esc(r.english)}${r.false_friend ? ' <span class="tag warn">false friend</span>' : ''}</p>` : ''}
+    ${r.origin ? `<p class="rline"><span class="rk">Origen</span>${esc(r.origin)}</p>` : ''}
+    ${r.family && r.family.length ? `<p class="rline"><span class="rk">Familia</span>${r.family.map(f => `<b>${esc(f.word)}</b> <span class="rm">${esc(f.meaning || '')}</span>`).join('<span class="rm"> · </span>')}</p>` : ''}
+    ${r.english ? `<p class="rline"><span class="rk">Inglés</span>${esc(r.english)}${r.false_friend ? ' <span class="tag warn">falso amigo</span>' : ''}</p>` : ''}
   </details>`;
 }
 function renderWord(q, d) {
   const out = $('#word-out');
   const entries = d.entries || [];
-  if (!entries.length) { out.innerHTML = `<p class="msg">Nothing came back for “${esc(q)}”.</p>`; return; }
-  out.innerHTML = (d.query_lang === 'en' ? `<p class="found">In Uruguay you'd say:</p>` : '') +
+  if (!entries.length) { out.innerHTML = `<p class="msg">No hubo resultados para “${esc(q)}”.</p>`; return; }
+  out.innerHTML = (d.query_lang === 'en' ? `<p class="found">En Uruguay se dice:</p>` : '') +
     entries.map((e, i) => {
       const head = (e.gender && e.gender !== 'el/la' ? e.gender + ' ' : '') + e.word;
       const verb = e.verb_infinitive && (DATA?.verbs[e.verb_infinitive] || AIVERBS[e.verb_infinitive]) ? e.verb_infinitive : (e.verb_infinitive || null);
@@ -621,12 +624,12 @@ function renderWord(q, d) {
         <div class="head"><h3>${esc(head)}</h3>${sayBtn(e.word)}<span data-star="${i}"></span></div>
         <div class="pos">${esc(e.pos || '')}${e.gender === 'el/la' ? ' · el/la' : ''}</div>
         <ol>${(e.senses || []).map(s => `<li>${esc(s.def)}${s.example ? `<span class="ex speakable" data-say="${esc(s.example)}">${esc(s.example)}</span>` : ''}${s.example_en ? `<span class="ex" style="font-family:var(--sans);font-size:13px">${esc(s.example_en)}</span>` : ''}</li>`).join('')}</ol>
-        ${e.synonyms && e.synonyms.length ? `<p class="syn">Synonyms: ${e.synonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
-        ${e.antonyms && e.antonyms.length ? `<p class="syn">Opposites: ${e.antonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
+        ${e.synonyms && e.synonyms.length ? `<p class="syn">Sinónimos: ${e.synonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
+        ${e.antonyms && e.antonyms.length ? `<p class="syn">Antónimos: ${e.antonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
         ${e.uruguay ? `<div class="flag"><span class="tag">acá</span><span>${esc(e.uruguay)}</span></div>` : ''}
         ${e.careful ? `<div class="flag"><span class="tag warn">ojo</span><span>${esc(e.careful)}</span></div>` : ''}
         ${rootsHTML(e.roots)}
-        ${verb ? `<div class="row"><button class="ghost" data-conj="${esc(verb)}">Conjugate ${esc(verb)}</button></div>` : ''}
+        ${verb ? `<div class="row"><button class="ghost" data-conj="${esc(verb)}">Conjugar ${esc(verb)}</button></div>` : ''}
       </div>`;
     }).join('');
   entries.forEach((e, i) => {
@@ -646,12 +649,12 @@ $('#word-form').addEventListener('submit', e => {
    ============================================================ */
 let trDir = 'auto';          // 'auto' | 'es-en' | 'en-es'
 let trLast = null;           // last detected source lang
-const LANG = { es: 'Spanish', en: 'English' };
+const LANG = { es: 'Español', en: 'Inglés' };
 
 function paintDir() {
   if (trDir === 'auto') {
-    $('#tr-from').textContent = trLast ? `Auto (${LANG[trLast]})` : 'Auto';
-    $('#tr-to').textContent = trLast ? LANG[trLast === 'es' ? 'en' : 'es'] : 'the other one';
+    $('#tr-from').textContent = trLast ? `Detectado: ${LANG[trLast]}` : 'Detectar';
+    $('#tr-to').textContent = trLast ? LANG[trLast === 'es' ? 'en' : 'es'] : 'el otro';
   } else {
     const [a, b] = trDir.split('-');
     $('#tr-from').textContent = LANG[a];
@@ -663,7 +666,7 @@ $('#tr-swap').onclick = () => {
   else if (trDir === 'es-en') trDir = 'en-es';
   else trDir = 'auto';
   paintDir();
-  toast(trDir === 'auto' ? 'Auto-detect' : `${$('#tr-from').textContent} → ${$('#tr-to').textContent}`);
+  toast(trDir === 'auto' ? 'Detectar idioma' : `${$('#tr-from').textContent} → ${$('#tr-to').textContent}`);
 };
 seg($('#tr-reg'), S.trReg, v => { S.trReg = v; saveSettings(); });
 
@@ -684,21 +687,22 @@ Reply with JSON only, no prose, no code fences:
 source_text: the exact source (for a photo, the text you read in it, keeping line breaks).
 alternatives: 0 to 2, only when there is a genuinely different natural option (more formal, more casual, a regional alternative). note says when to use it, under 15 words.
 note: one sentence on anything a learner should know (idiom, slang, false friend, ambiguity), or null.
+Write every note (alternatives[].note and note) in ${EXPL()}.
 If a photo has no readable text, reply {"error":"no text"}.`;
 }
 
 async function runTranslate({ text, image }) {
   const out = $('#tr-out');
   const go = $('#tr-go');
-  loading(out, image ? 'Reading the photo…' : 'Translating…');
+  loading(out, image ? 'Leyendo la foto…' : 'Traduciendo…');
   go.disabled = true;
   try {
     const content = image
       ? [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
          { type: 'text', text: 'Read the text in this photo and translate it.' }]
       : text;
-    const d = await ask({ system: trSystem(), content, maxTokens: 2000 });
-    if (d.error) throw new Error(image ? "Couldn't find readable text in that photo." : d.error);
+    const d = await ask({ system: trSystem(), content, maxTokens: 2000, model: image ? S.readModel : undefined });
+    if (d.error) throw new Error(image ? 'No encontré texto legible en esa foto.' : d.error);
     trLast = d.source_lang === 'en' ? 'en' : 'es';
     paintDir();
     renderTranslation(d, image);
@@ -711,17 +715,17 @@ function renderTranslation(d, image) {
   const toEs = d.source_lang === 'en';
   const spanish = toEs ? d.translation : d.source_text;
   out.innerHTML = `<div class="card">
-    ${image ? `<img class="thumb" src="data:image/jpeg;base64,${image}" alt="Your photo">` : ''}
+    ${image ? `<img class="thumb zoomable" src="data:image/jpeg;base64,${image}" alt="Tu foto">` : ''}
     ${image || d.source_text ? `<p class="tr-src">${esc(d.source_text || '')}</p>` : ''}
     <div class="head"><p class="tr-main" style="flex:1">${esc(d.translation)}</p>
-      <button class="icon" id="tr-copy" aria-label="Copy">${COPY}</button>
+      <button class="icon" id="tr-copy" aria-label="Copiar">${COPY}</button>
       ${sayBtn(spanish)}<span id="tr-star"></span></div>
     ${(d.alternatives || []).map(a => `<div class="alt-item"><div class="t ${toEs ? 'speakable' : ''}" ${toEs ? `data-say="${esc(a.text)}"` : ''}>${esc(a.text)}</div><div class="n">${esc(a.note || '')}</div></div>`).join('')}
     ${d.note ? `<div class="flag"><span class="tag">nota</span><span>${esc(d.note)}</span></div>` : ''}
   </div>`;
   $('#tr-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(d.translation); toast('Copied'); }
-    catch { toast("Couldn't copy"); }
+    try { await navigator.clipboard.writeText(d.translation); toast('Copiado'); }
+    catch { toast('No se pudo copiar'); }
   };
   $('#tr-star').replaceWith(starBtn({
     id: 'tr:' + fold(d.source_text || '').slice(0, 120), type: 'tr',
@@ -730,40 +734,19 @@ function renderTranslation(d, image) {
   }));
 }
 $('#tr-go').onclick = () => {
+  stopDictation();
   const t = $('#tr-q').value.trim();
   if (t) { $('#tr-q').blur(); runTranslate({ text: t }); }
 };
 $('#tr-q').addEventListener('keydown', e => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) $('#tr-go').click();
 });
-$$('input[data-img]').forEach(inp => inp.addEventListener('change', async e => {
+$$('input[data-img]').forEach(inp => inp.addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   const target = e.target.dataset.img;
   e.target.value = '';
-  if (!f) return;
-  const out = target === 'tr' ? $('#tr-out') : $('#check-read');
-  try {
-    const b64 = await shrinkImage(f, 1568, 0.85);
-    if (target === 'tr') runTranslate({ image: b64 });
-    else readForCheck(b64);
-  } catch { failed(out, new Error("Couldn't open that image.")); }
+  if (f) openStage(target, f);
 }));
-function shrinkImage(file, maxSide, quality) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
-    img.onload = () => {
-      const s = Math.min(1, maxSide / Math.max(img.width, img.height));
-      const c = document.createElement('canvas');
-      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
-      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url);
-      resolve(c.toDataURL('image/jpeg', quality).split(',')[1]);
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(); };
-    img.src = url;
-  });
-}
 
 /* ============================================================
    CHECK
@@ -778,16 +761,20 @@ function checkSystem() {
   const mode = S.checkMode === 'push'
     ? `Strictness: push toward C1. Fix every error, and ALSO fix things that are grammatical but sound non-native, stiff, or like a translation from English (calques, wrong collocations, unnatural word order, weak verb choice). Mark those as kind "style".`
     : `Strictness: errors only. Fix grammar, spelling, accents, agreement, wrong prepositions, wrong mood/tense, and words that are actually wrong. Leave correct-but-plain phrasing alone.`;
+  const spoken = checkDictated
+    ? `This text was dictated by voice, so it has no reliable punctuation, capitalisation or accents. Fix those silently in "corrected" but do NOT list them in changes. List only real grammar and word-choice problems: agreement, gender, tense and mood, prepositions, calques, wrong or unnatural words.`
+    : '';
   return `You correct Spanish written by an English speaker who lives in Uruguay (B2, working toward C1).
 ${UY}
 ${reg}
 ${mode}
+${spoken}
 Keep their meaning and voice. Don't rewrite whole sentences when a small fix works.
 Reply with JSON only, no prose, no code fences:
 {"corrected":str,"changes":[{"from":str,"to":str,"why":str,"kind":"error"|"style"}],"pattern":str|null}
 corrected: the full text with every fix applied, same line breaks.
-changes: one per fix, in order of appearance. from/to are the short spans that changed (a few words). why is the rule in plain English, under 15 words.
-pattern: one sentence naming the single most useful thing to work on, based on these mistakes; null if the text was clean.
+changes: one per fix, in order of appearance. from/to are the short spans that changed (a few words). why is the rule in ${EXPL()}, plain and under 15 words.
+pattern: one sentence in ${EXPL()} naming the single most useful thing to work on, based on these mistakes; null if the text was clean.
 If nothing needs fixing, return the text unchanged and an empty changes array.`;
 }
 
@@ -796,24 +783,27 @@ The photo may be handwriting or printed / on-screen text.
 Transcribe EXACTLY what is written. Do not correct anything: keep spelling mistakes, missing or wrong accents, wrong genders, wrong verb forms, odd punctuation and capitalisation exactly as they appear. Correcting it would defeat the purpose.
 Keep the original line breaks only where they mark a new paragraph or list item; join lines that just wrapped.
 If a word is genuinely illegible, write your best guess followed by [?].
+If the page has been marked up: leave out words that are struck through; put words inserted above the line (with a caret or arrow) where they belong in the sentence; if there are corrections in a second ink colour, ignore them and transcribe only the original writing.
 Reply with JSON only, no prose, no code fences: {"text":str,"unsure":int (how many [?] marks you used)}
 If there is no readable text, reply {"error":"no text"}.`;
 
 async function readForCheck(b64) {
   const box = $('#check-read');
   $('#check-out').innerHTML = '';
-  loading(box, 'Reading your photo…');
+  loading(box, 'Leyendo tu foto…');
   try {
     const d = await ask({
-      system: READ_SYS, maxTokens: 2500,
+      system: READ_SYS, maxTokens: 2500, model: S.readModel,
       content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
                 { type: 'text', text: 'Transcribe this exactly, errors and all.' }]
     });
-    if (d.error || !d.text) throw new Error("Couldn't find readable text in that photo.");
+    if (d.error || !d.text) throw new Error('No encontré texto legible en esa foto.');
     $('#check-q').value = d.text;
+    checkDictated = false;
+    paintClear('check');
     box.innerHTML = `<div class="readnote">
-      <img class="thumb small" src="data:image/jpeg;base64,${b64}" alt="Your photo">
-      <p>This is what I read, mistakes kept on purpose. Fix anything I misread${d.unsure ? ` (look for [?], ${d.unsure} spot${d.unsure > 1 ? 's' : ''})` : ''}, then tap <b>Check it</b>.</p>
+      <img class="thumb small zoomable" src="data:image/jpeg;base64,${b64}" alt="Tu foto">
+      <p>Esto es lo que leí, con los errores tal cual. Arreglá lo que haya leído mal${d.unsure ? ` (buscá [?], ${d.unsure} ${d.unsure > 1 ? 'lugares' : 'lugar'})` : ''} y después tocá <b>Corregir</b>. Tocá la foto para verla grande.</p>
     </div>`;
     $('#check-q').scrollIntoView({ block: 'start', behavior: 'smooth' });
   } catch (e) { failed(box, e); }
@@ -822,12 +812,12 @@ async function readForCheck(b64) {
 async function runCheck(text, cached) {
   const out = $('#check-out');
   if (cached) return renderCheck(text, cached);
-  loading(out, 'Checking…');
+  loading(out, 'Corrigiendo…');
   $('#check-go').disabled = true;
   try {
     const d = await ask({ system: checkSystem(), content: text, maxTokens: 2500 });
     renderCheck(text, d);
-    addHistory({ id: 'check:' + Date.now(), type: 'check', key: text, label: text.slice(0, 80), sub: d.changes?.length ? `${d.changes.length} fix${d.changes.length > 1 ? 'es' : ''}` : 'No fixes', data: d });
+    addHistory({ id: 'check:' + Date.now(), type: 'check', key: text, label: text.slice(0, 80), sub: d.changes?.length ? `${d.changes.length} ${d.changes.length > 1 ? 'correcciones' : 'corrección'}` : 'Sin correcciones', data: d });
   } catch (e) { failed(out, e); }
   $('#check-go').disabled = false;
 }
@@ -836,25 +826,26 @@ function renderCheck(text, d) {
   const changes = d.changes || [];
   const clean = !changes.length;
   out.innerHTML = `<div class="card">
-    ${clean ? `<p class="found" style="margin:0 0 10px">Nothing to fix.</p>` : ''}
+    ${clean ? `<p class="found" style="margin:0 0 10px">No hay nada que corregir.</p>` : ''}
     <div class="diff">${diffHTML(text, d.corrected || text)}</div>
     <div class="row" style="margin:0 0 4px">
-      <button class="ghost" id="ck-copy">Copy corrected</button>
+      <button class="ghost" id="ck-copy">Copiar corregido</button>
       ${sayBtn(d.corrected || text).replace('class="icon"', 'class="icon" style="margin-left:auto"')}
     </div>
     ${changes.map(c => `<div class="fix ${c.kind === 'style' ? 'style' : ''}">
       <div class="ft"><del>${esc(c.from)}</del><ins>${esc(c.to)}</ins></div>
-      <div class="why">${c.kind === 'style' ? '<span class="tag sol" style="margin-right:6px">sounds native</span>' : ''}${esc(c.why)}</div>
+      <div class="why">${c.kind === 'style' ? '<span class="tag sol" style="margin-right:6px">más natural</span>' : ''}${esc(c.why)}</div>
     </div>`).join('')}
-    ${d.pattern ? `<div class="flag"><span class="tag">work on</span><span>${esc(d.pattern)}</span></div>` : ''}
+    ${d.pattern ? `<div class="flag"><span class="tag">a practicar</span><span>${esc(d.pattern)}</span></div>` : ''}
   </div>`;
   $('#ck-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(d.corrected || text); toast('Copied'); }
-    catch { toast("Couldn't copy"); }
+    try { await navigator.clipboard.writeText(d.corrected || text); toast('Copiado'); }
+    catch { toast('No se pudo copiar'); }
   };
 }
 $('#check-go').onclick = () => {
   const t = $('#check-q').value.trim();
+  stopDictation();
   if (t) { $('#check-q').blur(); $('#check-read').innerHTML = ''; runCheck(t); }
 };
 
@@ -901,22 +892,24 @@ function diffHTML(a, b) {
 /* ============================================================
    MORE: saved · history · settings
    ============================================================ */
-const KIND = { conj: 'verb', verb: 'verb', word: 'word', tr: 'translation', check: 'check' };
+const KIND = { conj: 'verbo', verb: 'verbo', word: 'palabra', tr: 'traducción', check: 'corrección' };
 
 function reopen(item) {
   if (item.type === 'conj' || item.type === 'verb') {
-    if (item.ai && !AIVERBS[item.key]) return toast('That AI verb is no longer cached.');
+    if (item.ai && !AIVERBS[item.key]) return toast('Ese verbo de la IA ya no está guardado.');
     return openVerb(item.key);
   }
   if (item.type === 'word') { go('word', { focus: false }); return runWord(item.key, item.data); }
   if (item.type === 'tr') {
     go('tr', { focus: false });
     $('#tr-q').value = item.data?.source_text || item.key || '';
+    paintClear('tr');
     return renderTranslation(item.data);
   }
   if (item.type === 'check') {
     go('check', { focus: false });
     $('#check-q').value = item.key;
+    paintClear('check');
     return runCheck(item.key, item.data);
   }
 }
@@ -926,15 +919,15 @@ function listHTML(items, empty, removable) {
   return items.map((it, i) => `<div class="list-item">
     <span class="kind">${KIND[it.type] || it.type}</span>
     <button class="main" data-i="${i}"><span class="t">${esc(it.label)}</span><span class="s">${esc(it.sub || '')}</span></button>
-    ${removable ? `<button class="icon small" data-rm="${i}" aria-label="Remove"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ''}
+    ${removable ? `<button class="icon small" data-rm="${i}" aria-label="Quitar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ''}
   </div>`).join('');
 }
 
 function renderMore(kind) {
   const body = $('#more-body');
   if (kind === 'saved') {
-    body.innerHTML = listHTML(SAVED, 'Nothing saved yet. Tap the star on a verb, word or translation to keep it here.', true) +
-      (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">Copy list as text</button></div>` : '');
+    body.innerHTML = listHTML(SAVED, 'Todavía no guardaste nada. Tocá la estrella en un verbo, una palabra o una traducción para guardarlo acá.', true) +
+      (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">Copiar la lista como texto</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(SAVED[+b.dataset.i]));
     $$('[data-rm]', body).forEach(b => b.onclick = () => {
       SAVED.splice(+b.dataset.rm, 1); store.set('vos.saved', SAVED); renderMore('saved');
@@ -942,69 +935,274 @@ function renderMore(kind) {
     const ex = $('#export', body);
     if (ex) ex.onclick = async () => {
       const txt = SAVED.map(s => `${s.label}${s.sub ? ' — ' + s.sub : ''}`).join('\n');
-      try { await navigator.clipboard.writeText(txt); toast('Copied'); } catch { toast("Couldn't copy"); }
+      try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch { toast('No se pudo copiar'); }
     };
   }
   if (kind === 'history') {
-    body.innerHTML = listHTML(HIST, 'No history yet.', false) +
-      (HIST.length ? `<div class="settings-row"><button class="ghost" id="clear-h">Clear history</button></div>` : '');
+    body.innerHTML = listHTML(HIST, 'Todavía no hay historial.', false) +
+      (HIST.length ? `<div class="settings-row"><button class="ghost" id="clear-h">Borrar historial</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(HIST[+b.dataset.i]));
     const c = $('#clear-h', body);
     if (c) c.onclick = () => { HIST = []; store.set('vos.history', HIST); renderMore('history'); };
   }
   if (kind === 'settings') {
     const masked = S.key ? S.key.slice(0, 10) + '…' + S.key.slice(-4) : '';
+    const opts = cur => Object.entries(MODELS).map(([id, n]) => `<option value="${id}" ${id === cur ? 'selected' : ''}>${esc(n)}</option>`).join('');
     body.innerHTML = `
-      <label class="field-label" for="set-key">Anthropic API key</label>
+      <label class="field-label" for="set-key">Clave de API de Anthropic</label>
       <input type="password" id="set-key" placeholder="${masked ? esc(masked) : 'sk-ant-…'}" autocomplete="off" autocapitalize="off" spellcheck="false">
       <div class="settings-row">
-        <button class="primary" id="save-key">Save key</button>
-        <button class="ghost" id="test-key" ${S.key ? '' : 'disabled'}>Test</button>
-        ${S.key ? `<button class="ghost" id="del-key">Remove</button>` : ''}
+        <button class="primary" id="save-key">Guardar clave</button>
+        <button class="ghost" id="test-key" ${S.key ? '' : 'disabled'}>Probar</button>
+        ${S.key ? `<button class="ghost" id="del-key">Quitar</button>` : ''}
       </div>
-      <p class="help">${S.key ? `Saved on this phone: ${esc(masked)}.` : 'Needed for Word, Translate and Check. Conjugate works without it.'}
-      The key stays in this browser only and is sent nowhere except Anthropic's API. Create one at <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>, and set a monthly spend limit there.</p>
+      <p class="help">${S.key ? `Guardada en este teléfono: ${esc(masked)}.` : 'La necesitás para Palabra, Traducir y Corregir. Conjugar funciona sin clave.'}
+      La clave queda solo en este navegador y no se manda a ningún lado salvo a la API de Anthropic. Creala en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> y poné un límite de gasto mensual ahí.</p>
 
-      <label class="field-label" for="set-model">Model</label>
-      <select id="set-model">${Object.entries(MODELS).map(([id, n]) => `<option value="${id}" ${id === S.model ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select>
-      <p class="help">Haiku is plenty for most things. Switch to Sonnet if corrections feel shallow.</p>
+      <label class="field-label">Explicaciones de la IA</label>
+      <div class="seg" id="set-explain" role="radiogroup" aria-label="Idioma de las explicaciones">
+        <button data-v="es">Español</button><button data-v="en">Inglés</button>
+      </div>
+      <p class="help">El porqué de cada corrección, las notas de Traducir y las notas acá / ojo. Las definiciones de Palabra siguen en inglés.</p>
 
-      <label class="field-label">Stored on this phone</label>
-      <p class="help">${SAVED.length} saved · ${HIST.length} in history · ${Object.keys(AIVERBS).length} AI-conjugated verbs</p>
-      <div class="settings-row"><button class="ghost" id="clear-ai" ${Object.keys(AIVERBS).length ? '' : 'disabled'}>Forget AI verbs</button></div>
+      <label class="field-label" for="set-model">Modelo para texto</label>
+      <select id="set-model">${opts(S.model)}</select>
+      <p class="help">Palabra, Traducir y Corregir. Haiku alcanza para casi todo.</p>
 
-      <label class="field-label">About</label>
-      <p class="help">Vos ${VERSION}. Conjugations from the Spanish Verb Forms database by Fred Jehle, compiled by Brian Ghidinelli, used under
-      <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Vos forms, the -se subjunctive and haber are derived or added here.</p>`;
+      <label class="field-label" for="set-read">Modelo para fotos</label>
+      <select id="set-read">${opts(S.readModel)}</select>
+      <p class="help">Leer fotos, sobre todo letra a mano. Sonnet lee mucho mejor; cuesta algo más por foto.</p>
+
+      <label class="field-label">Guardado en este teléfono</label>
+      <p class="help">${SAVED.length} guardados · ${HIST.length} en el historial · ${Object.keys(AIVERBS).length} verbos conjugados por la IA</p>
+      <div class="settings-row"><button class="ghost" id="clear-ai" ${Object.keys(AIVERBS).length ? '' : 'disabled'}>Olvidar verbos de la IA</button></div>
+
+      <label class="field-label">Acerca de</label>
+      <p class="help">Vos ${VERSION}. Conjugaciones de la base Spanish Verb Forms de Fred Jehle, compilada por Brian Ghidinelli, usada bajo
+      <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Las formas de vos, el subjuntivo en -se y haber se derivan o agregan acá.</p>`;
     $('#save-key').onclick = () => {
       const v = $('#set-key').value.trim();
-      if (!v) return toast('Paste a key first');
-      if (!/^sk-ant-/.test(v)) toast("That doesn't look like an Anthropic key, saved anyway");
-      S.key = v; saveSettings(); renderMore('settings'); toast('Key saved');
+      if (!v) return toast('Primero pegá una clave');
+      if (!/^sk-ant-/.test(v)) toast('No parece una clave de Anthropic; la guardé igual');
+      S.key = v; saveSettings(); renderMore('settings'); toast('Clave guardada');
     };
     const del = $('#del-key');
-    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderMore('settings'); toast('Key removed'); };
+    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderMore('settings'); toast('Clave quitada'); };
     $('#test-key').onclick = async () => {
-      const b = $('#test-key'); b.disabled = true; b.textContent = 'Testing…';
+      const b = $('#test-key'); b.disabled = true; b.textContent = 'Probando…';
       try {
         const r = await fetch('https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: { 'content-type': 'application/json', 'x-api-key': S.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
           body: JSON.stringify({ model: S.model, max_tokens: 5, messages: [{ role: 'user', content: 'Decí "ta".' }] })
         });
-        toast(r.ok ? 'Key works' : r.status === 401 ? 'Key rejected' : `Error ${r.status}`);
-      } catch { toast("Couldn't reach the API"); }
-      b.disabled = false; b.textContent = 'Test';
+        toast(r.ok ? 'La clave funciona' : r.status === 401 ? 'Clave rechazada' : `Error ${r.status}`);
+      } catch { toast('No se pudo conectar con la API'); }
+      b.disabled = false; b.textContent = 'Probar';
     };
-    $('#set-model').onchange = e => { S.model = e.target.value; saveSettings(); toast('Model updated'); };
+    seg($('#set-explain'), S.explain, v => { S.explain = v; saveSettings(); toast(v === 'es' ? 'Explicaciones en español' : 'Explicaciones en inglés'); });
+    $('#set-model').onchange = e => { S.model = e.target.value; saveSettings(); toast('Modelo para texto actualizado'); };
+    $('#set-read').onchange = e => { S.readModel = e.target.value; saveSettings(); toast('Modelo para fotos actualizado'); };
     $('#clear-ai').onclick = () => { AIVERBS = {}; store.set('vos.aiverbs', AIVERBS); renderMore('settings'); };
   }
 }
 
 /* ============================================================
+   PHOTOS: preview, rotate, send · full-size viewer
+   ============================================================ */
+const STAGE = {};   // target -> { img, url, rot }
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => { URL.revokeObjectURL(url); reject(); };
+    img.src = url;
+  });
+}
+function drawRotated(img, rot, maxSide) {
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const s = Math.min(1, maxSide / Math.max(w, h));
+  const sw = Math.round(w * s), sh = Math.round(h * s);
+  const side = rot % 180 !== 0;
+  const c = document.createElement('canvas');
+  c.width = side ? sh : sw; c.height = side ? sw : sh;
+  const x = c.getContext('2d');
+  x.translate(c.width / 2, c.height / 2);
+  x.rotate(rot * Math.PI / 180);
+  x.drawImage(img, -sw / 2, -sh / 2, sw, sh);
+  return c;
+}
+async function openStage(target, file) {
+  closeStage(target);
+  const box = $('#' + target + '-stage');
+  try {
+    const { img, url } = await loadImage(file);
+    STAGE[target] = { img, url, rot: 0 };
+    renderStage(target);
+  } catch { failed(box, new Error('No se pudo abrir esa imagen.')); }
+}
+function renderStage(target) {
+  const st = STAGE[target];
+  const box = $('#' + target + '-stage');
+  box.innerHTML = `<div class="stage">
+    <div class="stage-img"></div>
+    <p class="help" style="margin:8px 0 0">Si el texto no está derecho, giralo antes de mandarlo.</p>
+    <div class="row">
+      <button class="icon cam" data-rot aria-label="Girar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>
+      </button>
+      <button class="ghost" data-cancel>Cancelar</button>
+      <button class="primary grow" data-send>${target === 'tr' ? 'Traducir foto' : 'Leer foto'}</button>
+    </div>
+  </div>`;
+  $('.stage-img', box).appendChild(drawRotated(st.img, st.rot, 900));
+  $('[data-rot]', box).onclick = () => { st.rot = (st.rot + 90) % 360; renderStage(target); };
+  $('[data-cancel]', box).onclick = () => closeStage(target);
+  $('[data-send]', box).onclick = () => {
+    const b64 = drawRotated(st.img, st.rot, 1568).toDataURL('image/jpeg', 0.85).split(',')[1];
+    closeStage(target);
+    if (target === 'tr') runTranslate({ image: b64 });
+    else readForCheck(b64);
+  };
+  box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+function closeStage(target) {
+  const st = STAGE[target];
+  if (st) URL.revokeObjectURL(st.url);
+  delete STAGE[target];
+  const box = $('#' + target + '-stage');
+  if (box) box.innerHTML = '';
+}
+
+document.addEventListener('click', e => {
+  const z = e.target.closest('img.zoomable');
+  if (!z) return;
+  const v = $('#viewer');
+  $('img', v).src = z.src;
+  v.hidden = false;
+});
+$('#viewer').onclick = () => { $('#viewer').hidden = true; };
+
+/* ============================================================
+   TEXT BOXES: clear button
+   ============================================================ */
+const BOX = { tr: '#tr-q', check: '#check-q' };
+function paintClear(target) {
+  const btn = $(`[data-clear="${target}"]`);
+  if (btn) btn.hidden = !$(BOX[target]).value;
+}
+for (const target of Object.keys(BOX)) {
+  $(BOX[target]).addEventListener('input', () => paintClear(target));
+  $(`[data-clear="${target}"]`).onclick = () => {
+    if (dict && dict.target === target) stopDictation();
+    const ta = $(BOX[target]);
+    ta.value = '';
+    paintClear(target);
+    if (target === 'check') { checkDictated = false; $('#check-read').innerHTML = ''; }
+    ta.focus();
+  };
+}
+
+/* ============================================================
+   DICTATION (Chrome speech recognition, free, needs signal)
+   ============================================================ */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+const ANDROID = /Android/i.test(navigator.userAgent);
+let dict = null;          // { target, rec, want, lastHeard, langs }
+let checkDictated = false;
+let trMicLang = 'es';     // resets to Spanish every time the app opens
+
+function paintMics() {
+  $$('[data-mic]').forEach(b => {
+    const on = !!dict && dict.target === b.dataset.mic;
+    b.classList.toggle('live', on);
+    b.setAttribute('aria-label', on ? 'Dejar de dictar' : 'Dictar');
+  });
+}
+function showInterim(target, text) {
+  const el = $('#' + target + '-interim');
+  el.textContent = text;
+  el.hidden = !text;
+}
+function appendDictated(target, text) {
+  const ta = $(BOX[target]);
+  text = text.trim();
+  if (!text) return;
+  const cur = ta.value;
+  ta.value = cur + (cur && !/\s$/.test(cur) ? ' ' : '') + text;
+  paintClear(target);
+  if (target === 'check') checkDictated = true;
+}
+function startDictation(target) {
+  if (!SR) return toast('Este navegador no permite dictar. Usá el micrófono del teclado.');
+  if (dict) { const same = dict.target === target; stopDictation(); if (same) return; }
+  const langs = target === 'tr' && trMicLang === 'en' ? ['en-US'] : ['es-UY', 'es-AR', 'es-419'];
+  const d = { target, want: true, lastHeard: Date.now(), langs };
+  dict = d;
+  const begin = () => {
+    const rec = new SR();
+    d.rec = rec;
+    rec.lang = d.langs[0];
+    // Android Chrome repeats text in continuous mode, so there we listen one
+    // phrase at a time and restart; elsewhere continuous mode is fine.
+    rec.continuous = !ANDROID;
+    rec.interimResults = true;
+    rec.onresult = e => {
+      let interim = '';
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) appendDictated(target, r[0].transcript);
+        else interim += r[0].transcript;
+      }
+      showInterim(target, interim);
+      d.lastHeard = Date.now();
+    };
+    rec.onerror = e => {
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { d.want = false; toast('Permití el micrófono para poder dictar.'); }
+      else if (e.error === 'network') { d.want = false; toast('Dictar necesita conexión.'); }
+      else if (e.error === 'language-not-supported' && d.langs.length > 1) d.langs.shift();
+    };
+    rec.onend = () => {
+      showInterim(target, '');
+      if (dict !== d) return;
+      if (d.want && Date.now() - d.lastHeard < 60000) {
+        try { begin(); return; } catch {}
+      }
+      if (d.want && Date.now() - d.lastHeard >= 60000) toast('Dejé de escuchar después de un minuto en silencio.');
+      dict = null; paintMics();
+    };
+    rec.start();
+  };
+  try { begin(); } catch { dict = null; toast('No se pudo empezar a dictar.'); }
+  paintMics();
+}
+function stopDictation() {
+  if (!dict) return;
+  const d = dict;
+  dict = null;
+  d.want = false;
+  try { d.rec && d.rec.stop(); } catch {}
+  showInterim(d.target, '');
+  paintMics();
+}
+$$('[data-mic]').forEach(b => b.onclick = () => startDictation(b.dataset.mic));
+$('#tr-miclang').onclick = () => {
+  trMicLang = trMicLang === 'es' ? 'en' : 'es';
+  const b = $('#tr-miclang');
+  b.textContent = trMicLang.toUpperCase();
+  b.setAttribute('aria-label', `Idioma del dictado: ${trMicLang === 'es' ? 'español' : 'inglés'}`);
+  if (dict && dict.target === 'tr') { stopDictation(); startDictation('tr'); }
+  toast(trMicLang === 'es' ? 'Dictado en español' : 'Dictado en inglés');
+};
+
+/* ============================================================
    BOOT
    ============================================================ */
 paintDir();
+paintClear('tr'); paintClear('check');
+if (!SR) $$('[data-mic], #tr-miclang').forEach(b => b.hidden = true);
 seg($('#more-seg'), S.moreTab, v => { S.moreTab = v; saveSettings(); renderMore(v); });
 go(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : S.view, { focus: false });
 runConj();

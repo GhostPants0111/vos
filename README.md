@@ -4,13 +4,13 @@ A personal Spanish reference for Android, tuned for Uruguay. Installable as an a
 
 **Conjugate** works fully offline: 638 verbs, every tense, vos first. Type an infinitive for the full table, or any conjugated form (`dijeran`, `andate`, `sos`) to find out what it is. Verbs outside the database can be conjugated by AI, clearly labelled.
 
-**Word**, **Translate** and **Check** call Claude through your own Anthropic API key, with prompts that target Montevideo usage rather than generic Latin American Spanish.
+**Palabra**, **Traducir** and **Corregir** call Claude through your own Anthropic API key, with prompts that target Montevideo usage rather than generic Latin American Spanish. Text goes to Haiku; photos go to Sonnet, which reads handwriting far better. Traducir and Corregir also take dictation through Chrome's built-in speech recognition. The interface is in Spanish.
 
 ## Install on the phone
 
 1. Open the site in Chrome.
 2. Menu, then **Add to home screen** (or **Install app**).
-3. Open it, go to **More → Settings**, paste your Anthropic API key, tap **Test**.
+3. Open it, go to **Más → Ajustes**, paste your Anthropic API key, tap **Probar**.
 
 The key is stored only in that browser on that phone. It is never in this repo. Set a monthly spend limit in the Anthropic Console.
 

@@ -1,7 +1,7 @@
 {
   "name": "Vos",
   "short_name": "Vos",
-  "description": "Conjugate, look up, translate and check Spanish, tuned for Uruguay.",
+  "description": "Conjugá, buscá, traducí y corregí español, pensado para Uruguay.",
   "lang": "es-UY",
   "start_url": "./#conj",
   "scope": "./",
@@ -15,7 +15,7 @@
     { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Translate", "url": "./#tr", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
-    { "name": "Check", "url": "./#check", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+    { "name": "Traducir", "url": "./#tr", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Corregir", "url": "./#check", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
   ]
 }

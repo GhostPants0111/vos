@@ -6,7 +6,11 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 8. **Photo reading misreads Cory's handwriting on Haiku** (Check tab).
    Test 1: sideways photo returned only 16 words, all wrong. Test 2: the same kind of page upright on Haiku got roughly the first sentence right, then degraded into mostly invented words. A larger Claude model read the same upright photo almost completely, so the photo is fine and Haiku is the limit.
-   Plan: (a) send photo reading to a stronger model (Sonnet by default, own setting), everything else stays on Haiku; (b) rotate button before sending; (c) teach the reading prompt to handle marked-up pages: drop struck-through words, include caret insertions in place, and treat a second ink colour (corrections) per Cory's choice; (d) tap-to-enlarge photo for proofreading. _Small-medium._
+   Plan: (a) send photo reading to a stronger model (Sonnet by default, own setting), everything else stays on Haiku; (b) rotate button before sending; (c) low priority, since Cory normally photographs clean pages: basic markup handling in the reading prompt (drop struck-through words, include caret insertions); (d) tap-to-enlarge photo for proofreading. _Small-medium. Approved, hold for next batch._
+
+9. **Voice input on Translate and Check.** Speak instead of type.
+   Plan: mic button next to the camera buttons, using Chrome's built-in speech recognition (free, no API cost, needs signal). It has to be told the language before listening, so Translate gets a Spanish/English choice defaulting to Spanish; Check is always Spanish (es-UY). Text lands in the box for a quick look before Check or Translate.
+   Note: dictation normalises what you say (no spelling or accent mistakes exist in speech, and the recognizer leans toward correct words), so Check on dictated text grades spoken grammar and word choice, not spelling. _Small._
 
 ## Proposed, not yet approved
 

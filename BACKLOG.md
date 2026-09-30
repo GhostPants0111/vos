@@ -7,7 +7,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 21. **Setup guide: focus on getting the app working; phones only.**
     (a) Drop the "Conjugar already works" intro; the guide is only about getting set up (install to home screen on phones, then the key). Feature explanations stay in Ayuda.
     (b) Bug: the guide showed Android install steps on a desktop browser. On a computer, show "open Vos on your Android or iPhone" instead, with a QR code of the link to scan with the phone, and a small "use it here anyway" link that reveals the key steps.
-    _Small. Pending Cory's go._
+    Soft version chosen (QR + "use it here anyway"), not a hard block. _Small. Approved, hold for next batch._
 
 ## Proposed, not yet approved
 

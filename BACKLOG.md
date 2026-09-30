@@ -4,7 +4,8 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-_None open._
+19. **"How to use Vos" help page.** Explains what each feature does and how to get the most out of it: Conjugar (infinitive or any form, Por persona, the toggles, tap to hear), Palabra (lookups in Spanish or English, Raíces, photo lookup with the focus box), Traducir (auto direction, Informal/Formal, photo, dictation and the ES/EN mic), Corregir (Solo errores vs Exigime, photo of handwriting with proofreading, dictation), and Más (Guardados, Historial, Ajustes). In Spanish and English, following the app language.
+   Proposed placement: a fourth section in Más ("Ayuda" / "Help"), plus a "Cómo se usa" link at the end of the setup guide so new users land on it after adding their key. _Small._
 
 ## Proposed, not yet approved
 

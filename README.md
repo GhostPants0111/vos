@@ -1,6 +1,6 @@
 # Vos
 
-A personal Spanish reference for Android, tuned for Uruguay. Installable as an app from the browser.
+A Spanish reference for your phone, built for Uruguay first. Installable as an app from the browser on Android and iPhone. A country setting in Ajustes adapts it to any of 20 Spanish-speaking countries; Uruguay is always the default.
 
 **Conjugate** works fully offline: 638 verbs, every tense, vos first. Type an infinitive for the full table, or any conjugated form (`dijeran`, `andate`, `sos`) to find out what it is. Verbs outside the database can be conjugated by AI, clearly labelled.
 
@@ -8,9 +8,9 @@ A personal Spanish reference for Android, tuned for Uruguay. Installable as an a
 
 ## Install on the phone
 
-1. Open the site in Chrome.
-2. Menu, then **Add to home screen** (or **Install app**).
-3. Open it, go to **Más → Ajustes**, paste an Anthropic or Google Gemini API key, tap **Probar**.
+1. Android: open the site in Chrome, menu ⋮ → **Add to Home screen**. iPhone: open it in Safari, Share → **Add to Home Screen** (important: otherwise Safari may erase saved data).
+2. On first launch a setup guide explains how to get a free Google Gemini key or a paid Anthropic key; paste it right there.
+3. Palabra can also identify objects and dishes from a photo.
 
 The key is stored only in that browser on that phone. It is never in this repo. With Anthropic, set a monthly spend limit in the Console. On Gemini's free tier, Google may use what you send to improve its products.
 

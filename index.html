@@ -36,6 +36,18 @@
     <input type="search" id="word-q" placeholder="una palabra, o una en inglés" data-i18n-ph="ph.word" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
     <button class="primary" type="submit" data-i18n="btn.search">Buscar</button>
   </form>
+  <div class="row">
+    <label class="icon cam" aria-label="Sacar una foto" data-i18n-aria="aria.photo">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+      <input type="file" accept="image/*" capture="environment" data-img="word" class="vh">
+    </label>
+    <label class="icon cam" aria-label="Elegir una foto" data-i18n-aria="aria.gallery">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></svg>
+      <input type="file" accept="image/*" data-img="word" class="vh">
+    </label>
+    <span class="help" data-i18n="ident.hint">¿Qué es esto? Sacale una foto.</span>
+  </div>
+  <div id="word-stage"></div>
   <div id="word-out"></div>
 </section>
 
@@ -63,11 +75,11 @@
   <div class="row">
     <label class="icon cam" aria-label="Sacar una foto" data-i18n-aria="aria.photo">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-      <input type="file" accept="image/*" capture="environment" data-img="tr" hidden>
+      <input type="file" accept="image/*" capture="environment" data-img="tr" class="vh">
     </label>
     <label class="icon cam" aria-label="Elegir una foto" data-i18n-aria="aria.gallery">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></svg>
-      <input type="file" accept="image/*" data-img="tr" hidden>
+      <input type="file" accept="image/*" data-img="tr" class="vh">
     </label>
     <button class="icon cam mic" data-mic="tr" aria-label="Dictar">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
@@ -99,11 +111,11 @@
   <div class="row">
     <label class="icon cam" aria-label="Sacar una foto" data-i18n-aria="aria.photo">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-      <input type="file" accept="image/*" capture="environment" data-img="check" hidden>
+      <input type="file" accept="image/*" capture="environment" data-img="check" class="vh">
     </label>
     <label class="icon cam" aria-label="Elegir una foto" data-i18n-aria="aria.gallery">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></svg>
-      <input type="file" accept="image/*" data-img="check" hidden>
+      <input type="file" accept="image/*" data-img="check" class="vh">
     </label>
     <button class="icon cam mic" data-mic="check" aria-label="Dictar">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
@@ -143,6 +155,7 @@
   </button>
 </nav>
 
+<div class="guide" id="guide" hidden><div class="guide-card" id="guide-body"></div></div>
 <div class="viewer" id="viewer" hidden><img alt="Tu foto" data-i18n-alt="alt.photo"></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 

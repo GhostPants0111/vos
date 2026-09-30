@@ -317,3 +317,38 @@ body { padding-top: calc(env(safe-area-inset-top) + 12px); }
 .viewer img { max-width: 100%; height: auto; display: block; }
 
 .help.warnnote { color: var(--warn); }
+
+/* ---------- v1.5 ---------- */
+/* File inputs stay in the layout (visually hidden) so iPhone Safari opens them from the label. */
+.cam { position: relative; overflow: hidden; }
+.vh { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); pointer-events: none; }
+#view-word .row .help { margin: 0 0 0 4px; }
+.tabs { transition: transform .12s ease-out; }
+
+.focusbox { margin-top: 10px; font-size: 15px; padding: 10px 12px; }
+
+.ident { border-top: 1px solid var(--line); padding: 12px 0 8px; }
+.ident:first-of-type { border-top: 0; }
+.card .ident:first-child, .card .tr-src + .ident, .card .thumb + .ident { border-top: 0; }
+.iw { font: 400 22px/1.2 var(--serif); }
+.iw .art { color: var(--muted); }
+.ig { font-size: 13px; color: var(--muted); margin-top: 2px; }
+.idesc { font-size: 15px; margin-top: 4px; }
+.ident .link { margin-top: 6px; }
+
+.guide {
+  position: fixed; inset: 0; z-index: 35; background: rgba(8, 14, 20, .55);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.guide-card {
+  background: var(--bg); width: 100%; max-width: 640px; max-height: 92vh; overflow: auto;
+  border-radius: 20px 20px 0 0; padding: 12px 18px calc(24px + env(safe-area-inset-bottom));
+}
+.ghead { display: flex; align-items: center; justify-content: space-between; }
+.ghead h2 { margin: 6px 0; font: 400 26px var(--serif); }
+.guide-card h3 { font-size: 15px; margin: 18px 0 6px; color: var(--celeste); }
+.guide-card ol { margin: 0; padding-left: 22px; }
+.guide-card li { margin: 0 0 6px; }
+.guide-card a { color: var(--celeste); }
+.gnote { background: var(--celeste-soft); border-radius: 12px; padding: 10px 12px; font-size: 14px; margin: 10px 0; }
+@media (prefers-reduced-motion: no-preference) { .guide-card { animation: up .22s ease-out; } }

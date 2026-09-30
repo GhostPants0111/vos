@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.4.0';
+const VERSION = '1.5.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -34,7 +34,7 @@ const STORED = store.get('vos.settings', null);
 const BROWSER_ES = /^es/i.test(navigator.language || '');
 const FRESH_EN = !STORED && !BROWSER_ES;   // brand-new install on a non-Spanish phone
 const DEFAULTS = {
-  key: '', ui: FRESH_EN ? 'en' : 'es', explain: FRESH_EN ? 'en' : 'es',
+  key: '', ui: FRESH_EN ? 'en' : 'es', explain: FRESH_EN ? 'en' : 'es', country: 'UY', guideSeen: false,
   vosotros: false, se: false, rare: false,
   byPerson: false, person: 'vos', mood: 'ind',
   trReg: 'casual', checkReg: 'formal', checkMode: 'push',
@@ -89,7 +89,7 @@ const I18N = {
     'conj.vosNote': s => `Por escrito, el subjuntivo con tú (${s}) es lo más seguro; la forma de vos es común al hablar.`,
     'conj.compNote': pp => `Todos se forman con haber + <b>${pp}</b>.`,
     'word.looking': q => `Buscando ${q}…`, 'word.none': q => `No hubo resultados para “${q}”.`,
-    'word.inUy': 'En Uruguay se dice:', 'word.syn': 'Sinónimos', 'word.ant': 'Antónimos', 'word.conj': v => `Conjugar ${v}`,
+    'word.inUy': () => `En ${cName()} se dice:`, 'word.syn': 'Sinónimos', 'word.ant': 'Antónimos', 'word.conj': v => `Conjugar ${v}`,
     'roots': 'Raíces', 'roots.origin': 'Origen', 'roots.family': 'Familia', 'roots.english': 'Inglés', 'roots.ff': 'falso amigo',
     'tag.uy': 'acá', 'tag.careful': 'ojo', 'tag.note': 'nota', 'tag.natural': 'más natural', 'tag.work': 'a practicar',
     'lang.es': 'Español', 'lang.en': 'Inglés',
@@ -125,7 +125,33 @@ const I18N = {
     'dict.unsupported': 'Este navegador no permite dictar. Usá el micrófono del teclado.',
     'dict.perm': 'Permití el micrófono para poder dictar.', 'dict.net': 'Dictar necesita conexión.',
     'dict.silence': 'Dejé de escuchar después de un minuto en silencio.', 'dict.fail': 'No se pudo empezar a dictar.',
-    'dict.lang': l => l === 'es' ? 'Dictado en español' : 'Dictado en inglés'
+    'dict.lang': l => l === 'es' ? 'Dictado en español' : 'Dictado en inglés',
+    'dict.iosFallback': 'En iPhone, si el micrófono de la app no anda, tocá el cuadro de texto y usá el micrófono del teclado.',
+    'set.country': 'País / variante',
+    'set.countryHelp': 'Vos está pensada para Uruguay. Otros países cambian el vocabulario, el voseo o tuteo, el dictado y la voz; las notas locales pueden ser menos precisas.',
+    'country.set': n => `País: ${n}`,
+    'ident.hint': '¿Qué es esto? Sacale una foto.',
+    'stage.focusPh': 'Opcional: en qué fijarse (ej. solo la comida)',
+    'stage.sendWord': 'Identificar', 'ident.working': 'Mirando la foto…',
+    'ident.none': 'No reconocí nada en esa foto.', 'ident.general': 'en otros lados:',
+    'ident.unsure': 'no estoy seguro', 'ident.look': 'Ver palabra', 'kind.ident': 'foto',
+    'g.title': 'Bienvenido a Vos',
+    'g.intro': 'Conjugar ya funciona, sin clave y sin conexión. Palabra, Traducir y Corregir usan IA y necesitan una clave de API. Se consigue en un par de minutos.',
+    'g.installIos': 'En iPhone, primero instalala: en Safari tocá Compartir (el cuadrado con la flecha) → <b>Agregar a inicio</b>. Si la usás solo dentro de Safari, el iPhone puede borrar tu clave y tus guardados.',
+    'g.installAndroid': 'Para usarla como app: en Chrome tocá el menú ⋮ → <b>Agregar a la pantalla principal</b> (o <b>Instalar app</b>).',
+    'g.freeTitle': 'Opción gratis: Google Gemini',
+    'g.free1': 'Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.',
+    'g.free2': 'Aceptá los términos si te los pide y tocá <b>Create API key</b>.',
+    'g.free3': 'Copiá la clave. Empieza con <b>AIza</b>.',
+    'g.free4': 'Pegala acá abajo y tocá <b>Guardar y probar</b>.',
+    'g.paidTitle': 'Opción de pago: Claude (Anthropic), mejor calidad',
+    'g.paid1': 'Creá una cuenta en <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.',
+    'g.paid2': 'En <b>Billing</b>, cargá crédito. Con 5 dólares se empieza, y el uso normal cuesta centavos.',
+    'g.paid3': 'En <b>API keys</b>, tocá <b>Create key</b> y copiala enseguida: empieza con <b>sk-ant-</b> y se muestra una sola vez.',
+    'g.paid4': 'Poné un límite de gasto mensual en Billing y pegá la clave acá abajo.',
+    'g.paste': 'Pegá tu clave', 'g.saveTest': 'Guardar y probar', 'g.later': 'Más tarde',
+    'g.ready': 'Listo, la clave funciona.', 'g.open': '¿Cómo consigo una clave?', 'g.setup': 'Configurar clave',
+    'g.close': 'Cerrar'
   },
   en: {
     'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Check', 'tab.more': 'More',
@@ -170,9 +196,9 @@ const I18N = {
     'conj.vosNote': s => `In writing, the tú subjunctive (${s}) is the safer choice; the vos form is common in speech.`,
     'conj.compNote': pp => `All of these are haber + <b>${pp}</b>.`,
     'word.looking': q => `Looking up ${q}…`, 'word.none': q => `Nothing came back for “${q}”.`,
-    'word.inUy': "In Uruguay you'd say:", 'word.syn': 'Synonyms', 'word.ant': 'Opposites', 'word.conj': v => `Conjugate ${v}`,
+    'word.inUy': () => `In ${cName()} you'd say:`, 'word.syn': 'Synonyms', 'word.ant': 'Opposites', 'word.conj': v => `Conjugate ${v}`,
     'roots': 'Roots', 'roots.origin': 'Origin', 'roots.family': 'Family', 'roots.english': 'English', 'roots.ff': 'false friend',
-    'tag.uy': 'Uruguay', 'tag.careful': 'careful', 'tag.note': 'note', 'tag.natural': 'sounds native', 'tag.work': 'work on',
+    'tag.uy': () => C().en, 'tag.careful': 'careful', 'tag.note': 'note', 'tag.natural': 'sounds native', 'tag.work': 'work on',
     'lang.es': 'Spanish', 'lang.en': 'English',
     'tr.detect': 'Auto', 'tr.detected': l => `Detected: ${l}`, 'tr.other': 'the other one', 'tr.autoToast': 'Auto-detect',
     'tr.reading': 'Reading the photo…', 'tr.working': 'Translating…',
@@ -206,7 +232,33 @@ const I18N = {
     'dict.unsupported': "This browser can't take dictation. Use your keyboard's mic instead.",
     'dict.perm': 'Allow the microphone to dictate.', 'dict.net': 'Dictation needs a connection.',
     'dict.silence': 'Stopped listening after a minute of silence.', 'dict.fail': "Couldn't start dictation.",
-    'dict.lang': l => l === 'es' ? 'Dictating in Spanish' : 'Dictating in English'
+    'dict.lang': l => l === 'es' ? 'Dictating in Spanish' : 'Dictating in English',
+    'dict.iosFallback': "On iPhone, if the app's mic doesn't work, tap the text box and use the keyboard's mic instead.",
+    'set.country': 'Country / variety',
+    'set.countryHelp': 'Vos is built for Uruguay. Other countries change the vocabulary, vos or tú, dictation and voice; local notes may be less precise.',
+    'country.set': n => `Country: ${n}`,
+    'ident.hint': 'What is this? Snap a photo.',
+    'stage.focusPh': 'Optional: what to focus on (e.g. just the food)',
+    'stage.sendWord': 'Identify', 'ident.working': 'Looking at the photo…',
+    'ident.none': "Couldn't recognise anything in that photo.", 'ident.general': 'elsewhere:',
+    'ident.unsure': 'not sure', 'ident.look': 'Look it up', 'kind.ident': 'photo',
+    'g.title': 'Welcome to Vos',
+    'g.intro': 'Conjugate already works, with no key and no connection. Word, Translate and Check use AI and need an API key. It takes a couple of minutes to get one.',
+    'g.installIos': 'On iPhone, install it first: in Safari tap Share (the square with the arrow) → <b>Add to Home Screen</b>. If you only use it inside Safari, the iPhone may erase your key and saved items.',
+    'g.installAndroid': 'To use it as an app: in Chrome tap the ⋮ menu → <b>Add to Home screen</b> (or <b>Install app</b>).',
+    'g.freeTitle': 'Free option: Google Gemini',
+    'g.free1': 'Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with your Google account.',
+    'g.free2': 'Accept the terms if asked, then tap <b>Create API key</b>.',
+    'g.free3': 'Copy the key. It starts with <b>AIza</b>.',
+    'g.free4': 'Paste it below and tap <b>Save and test</b>.',
+    'g.paidTitle': 'Paid option: Claude (Anthropic), better quality',
+    'g.paid1': 'Create an account at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.',
+    'g.paid2': 'Under <b>Billing</b>, add credit. $5 is enough to start; normal use costs cents.',
+    'g.paid3': 'Under <b>API keys</b>, tap <b>Create key</b> and copy it right away: it starts with <b>sk-ant-</b> and is shown only once.',
+    'g.paid4': 'Set a monthly spend limit under Billing, then paste the key below.',
+    'g.paste': 'Paste your key', 'g.saveTest': 'Save and test', 'g.later': 'Later',
+    'g.ready': 'All set, the key works.', 'g.open': 'How do I get a key?', 'g.setup': 'Set up key',
+    'g.close': 'Close'
   }
 };
 function t(k, ...a) {
@@ -219,6 +271,125 @@ function applyI18n() {
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   $$('[data-i18n-alt]').forEach(el => { el.alt = t(el.dataset.i18nAlt); });
+}
+
+/* ---------------- countries (Uruguay first, always the default) ----------------
+   mode: 'vos'   vos first, tú shown as the alternate
+         'tuvos' tú first, vos still shown
+         'cl'    tú first, plus a present-tense "tú (chileno)" row
+         'tu'    tú only, vos hidden
+         'es'    tú only, vosotros always shown                                  */
+const COUNTRIES = [
+  { k: 'UY', es: 'Uruguay', en: 'Uruguay', adj: 'Uruguayan', place: 'Montevideo', mode: 'vos', loc: 'es-UY',
+    casual: 'voseo (vos tenés, vení, fijate)',
+    notes: `- Informal register uses voseo (vos tenés, vení, fijate). Formal register uses usted. Never use vosotros.
+- Prefer Uruguayan vocabulary where it differs: ómnibus (bus), championes (sneakers), campera (jacket), gurí/gurisa (kid), liceo (secondary school), frutilla, boniato, morrón, remera, celular, auto, almacén, "ta" (ok).
+- In casual text, Uruguayans often mix tú with voseo verbs ("tú sabés"). That is real usage here; do not treat it as an error in casual register.`,
+    head: 'Target variety: Uruguayan Spanish as used in Montevideo today. Not porteño, not generic Latin American, never Spain.' },
+  { k: 'AR', es: 'Argentina', en: 'Argentina', adj: 'Argentine', place: 'Buenos Aires', mode: 'vos', loc: 'es-AR',
+    casual: 'voseo (vos tenés, vení, fijate)',
+    notes: `- Informal register uses voseo (vos tenés, vení, fijate). Formal register uses usted. Never use vosotros.
+- Prefer Argentine vocabulary where it differs: colectivo (bus), pileta (pool), pibe/piba (kid), remera, campera, zapatillas, palta, frutilla, laburo (work), che, boliche (club).
+- Vos subjunctive forms (que vengás) are common in speech; the tú subjunctive (que vengas) is the safer choice in writing.` },
+  { k: 'BO', es: 'Bolivia', en: 'Bolivia', adj: 'Bolivian', place: 'La Paz, with Santa Cruz as the main regional variant', mode: 'tuvos', loc: 'es-BO',
+    casual: 'tú (voseo is normal in Santa Cruz and Tarija)',
+    notes: `- Informal register: tú in La Paz, Cochabamba and the highlands; voseo (vos tenés) is normal in Santa Cruz and Tarija. Formal: usted. Never use vosotros.
+- Andean speech softens with pues, nomás, pero and diminutives (un ratito, cafecito).
+- Vocabulary: micro (bus), wawa (baby), chompa (sweater), salteña, api, trufi (shared taxi).` },
+  { k: 'CL', es: 'Chile', en: 'Chile', adj: 'Chilean', place: 'Santiago', mode: 'cl', loc: 'es-CL',
+    casual: 'tú, with Chilean verbal voseo in relaxed speech (¿cómo estái?, ¿querís?, ¿cachai?)',
+    notes: `- Informal register: tú as the pronoun, often with Chilean verbal voseo in relaxed speech (estái, querís, podís, cachai). Accept it in casual register; in formal register use standard tú or usted. The pronoun vos itself is very familiar or rude. Never use vosotros.
+- Vocabulary: micro (bus), pololo/polola (boyfriend/girlfriend), cachar (to get it), al tiro (right away), fome (boring), bacán (cool), luca (1,000 pesos), guagua (baby), palta, once (evening snack).` },
+  { k: 'CO', es: 'Colombia', en: 'Colombia', adj: 'Colombian', place: 'Bogotá, with Medellín, Cali and the Caribbean coast as regional variants', mode: 'tuvos', loc: 'es-CO',
+    casual: 'tú in Bogotá and on the coast; usted even among friends in much of the country; vos in Medellín and Cali',
+    notes: `- Address is regional: tú in Bogotá and on the Caribbean coast; usted is used even among friends and family in much of the country; vos in Medellín (paisa) and Cali. Treat all three as correct. Never use vosotros.
+- Vocabulary: parce/parcero (friend), chévere, bacano, tinto (black coffee), plata (money), guayabo (hangover), ¿qué más? (how are you).` },
+  { k: 'CR', es: 'Costa Rica', en: 'Costa Rica', adj: 'Costa Rican', place: 'San José', mode: 'vos', loc: 'es-CR',
+    casual: 'usted, which Costa Ricans use even with friends and family, or vos among close friends',
+    notes: `- Usted is used very widely, even among friends and family (ustedeo); vos among close friends; tú is uncommon. Treat usted as natural in casual register. Never use vosotros.
+- Vocabulary: mae (dude), pura vida, tuanis (cool), diay, güila (kid), brete (work), tico/tica, casado (typical lunch plate).` },
+  { k: 'CU', es: 'Cuba', en: 'Cuba', adj: 'Cuban', place: 'Havana', mode: 'tu', loc: 'es-CU',
+    casual: 'tú',
+    notes: `- Informal register: tú. Formal: usted. Plural: ustedes. Never use vosotros.
+- Vocabulary: guagua (bus), asere (friend), ¿qué bolá? (what's up), jama (food), yuma (foreigner), fula (dollars).` },
+  { k: 'EC', es: 'Ecuador', en: 'Ecuador', adj: 'Ecuadorian', place: 'Quito, with Guayaquil as the coastal variant', mode: 'tuvos', loc: 'es-EC',
+    casual: 'tú on the coast; usted, and vos among friends, in the Sierra',
+    notes: `- Address is regional: tú on the coast (Guayaquil); usted and vos in the Sierra (Quito). Treat all as correct. Never use vosotros.
+- Vocabulary: chévere, ñaño/ñaña (brother/sister), guagua (child), ¿qué fue? (what's up), bacán, ¿mande?` },
+  { k: 'SV', es: 'El Salvador', en: 'El Salvador', adj: 'Salvadoran', place: 'San Salvador', mode: 'vos', loc: 'es-SV',
+    casual: 'vos among friends; usted is common',
+    notes: `- Informal register: vos (vos tenés, vení) among friends; usted is common; tú is heard but less natural. Never use vosotros.
+- Vocabulary: bicho/bicha (kid), cipote (kid), chivo (cool), pisto (money), guanaco (Salvadoran), pupusa, cabal (exactly).` },
+  { k: 'ES', es: 'España', en: 'Spain', adj: 'Peninsular (Spain)', place: 'Madrid', mode: 'es', loc: 'es-ES',
+    casual: 'tú, with vosotros for plural informal',
+    notes: `- Informal register: tú, and vosotros for plural informal (vosotros tenéis, venid). Formal: usted / ustedes. vosotros is correct here; never flag it.
+- Vocabulary: vale, coche, móvil, ordenador, zumo, gafas, conducir, guay, currar, tío/tía (mate).
+- Leísmo with people (le vi a Juan) is accepted.` },
+  { k: 'GT', es: 'Guatemala', en: 'Guatemala', adj: 'Guatemalan', place: 'Guatemala City', mode: 'vos', loc: 'es-GT',
+    casual: 'vos among friends; usted is common',
+    notes: `- Informal register: vos (vos tenés, vení) among friends; usted is common; tú is also heard. Never use vosotros.
+- Vocabulary: patojo/patoja (kid), chucho (dog), chapín (Guatemalan), cabal (exactly), shute (nosy), pisto (money).` },
+  { k: 'HN', es: 'Honduras', en: 'Honduras', adj: 'Honduran', place: 'Tegucigalpa', mode: 'vos', loc: 'es-HN',
+    casual: 'vos among friends; usted is common',
+    notes: `- Informal register: vos (vos tenés, vení) among friends; usted is common. Never use vosotros.
+- Vocabulary: cipote/cipota (kid), maje (dude), catracho (Honduran), pisto (money), baleada, chele (light-skinned).` },
+  { k: 'MX', es: 'México', en: 'Mexico', adj: 'Mexican', place: 'Mexico City', mode: 'tu', loc: 'es-MX',
+    casual: 'tú',
+    notes: `- Informal register: tú. Formal: usted. Plural: ustedes. Never use vosotros.
+- Vocabulary: güey, chido, neta, padre (cool), camión (bus), chamba (work), lana (money), popote (straw), ¿mande?` },
+  { k: 'NI', es: 'Nicaragua', en: 'Nicaragua', adj: 'Nicaraguan', place: 'Managua', mode: 'vos', loc: 'es-NI',
+    casual: 'voseo (vos tenés, vení)',
+    notes: `- Informal register: voseo (vos tenés, vení, mirá), used widely. Formal: usted. Never use vosotros.
+- Vocabulary: chunche (thingamajig), tuani (cool), chele (light-skinned), chavalo/chavala (kid), ¡dale pues!, gallo pinto.` },
+  { k: 'PA', es: 'Panamá', en: 'Panama', adj: 'Panamanian', place: 'Panama City', mode: 'tu', loc: 'es-PA',
+    casual: 'tú',
+    notes: `- Informal register: tú. Formal: usted. Never use vosotros.
+- Vocabulary: ¡qué xopá! (what's up), pelao/pelada (kid), chantin (home), chuleta (wow), buco (a lot), chévere.` },
+  { k: 'PY', es: 'Paraguay', en: 'Paraguay', adj: 'Paraguayan', place: 'Asunción', mode: 'vos', loc: 'es-PY',
+    casual: 'voseo (vos tenés, vení)',
+    notes: `- Informal register: voseo (vos tenés, vení). Formal: usted. Never use vosotros.
+- Everyday speech mixes in Guaraní words and particles (jopará), such as che (my), nde, -pa, -na. Mention them when relevant; keep formal register in standard Spanish.
+- Vocabulary: tereré, chipa, mitã (kid), ñembo (fake).` },
+  { k: 'PE', es: 'Perú', en: 'Peru', adj: 'Peruvian', place: 'Lima', mode: 'tu', loc: 'es-PE',
+    casual: 'tú',
+    notes: `- Informal register: tú; usted is common in polite everyday exchanges. Never use vosotros.
+- Vocabulary: chamba (work), pata (friend), jato (house), bacán, combi (minibus), chompa (sweater), palta, ají.` },
+  { k: 'PR', es: 'Puerto Rico', en: 'Puerto Rico', adj: 'Puerto Rican', place: 'San Juan', mode: 'tu', loc: 'es-PR',
+    casual: 'tú',
+    notes: `- Informal register: tú. Formal: usted. Never use vosotros.
+- Vocabulary: guagua (bus), chavos (money), janguear (to hang out), boricua, chévere, ¡wepa! Code-switching with English is common and not an error in casual register.` },
+  { k: 'DO', es: 'República Dominicana', en: 'Dominican Republic', adj: 'Dominican', place: 'Santo Domingo', mode: 'tu', loc: 'es-DO',
+    casual: 'tú',
+    notes: `- Informal register: tú. Formal: usted. Never use vosotros.
+- Vocabulary: guagua (bus), vaina (thing), un chin (a little), tíguere (street-smart guy), jevi (cool), concho (shared taxi), ¡qué lo que!` },
+  { k: 'VE', es: 'Venezuela', en: 'Venezuela', adj: 'Venezuelan', place: 'Caracas', mode: 'tuvos', loc: 'es-VE',
+    casual: 'tú (voseo in Zulia)',
+    notes: `- Informal register: tú; voseo is used in Zulia (Maracaibo). Formal: usted. Never use vosotros.
+- Vocabulary: chamo/chama (kid, friend), pana (friend), chévere, vaina (thing), cambur (banana), arepa.` }
+];
+const C = () => COUNTRIES.find(c => c.k === S.country) || COUNTRIES[0];
+const cName = () => S.ui === 'en' ? C().en : C().es;
+function VARIETY() {
+  const c = C();
+  const head = c.head || `Target variety: ${c.adj} Spanish as used in ${c.place} today. Not generic Latin American Spanish, and not Uruguayan unless it happens to match.`;
+  return `${head}
+${c.notes}
+- Only point out usage that is genuinely characteristic of ${c.en}. If something is the same across the wider region or across Latin America, do not invent a local difference; say nothing.`;
+}
+/* Chilean verbal voseo, present indicative only, derived from the Rioplatense vos form. */
+function chileanPresent(vosForm) {
+  if (!vosForm) return null;
+  const IRR = { sos: 'erís', vas: 'vai', has: 'habís', das: 'dai', ves: 'veís' };
+  const parts = vosForm.split(' ');
+  const verb = parts.pop();
+  let f = IRR[verb];
+  if (!f) {
+    if (/ás$/.test(verb)) f = verb.slice(0, -2) + 'ái';
+    else if (/és$/.test(verb)) f = verb.slice(0, -2) + 'ís';
+    else if (/ís$/.test(verb)) f = verb;
+    else return null;
+  }
+  return [...parts, f].join(' ');
 }
 
 
@@ -236,7 +407,7 @@ let esVoice = null;
 function pickVoice() {
   if (!('speechSynthesis' in window)) return;
   const vs = speechSynthesis.getVoices();
-  const pref = ['es-UY', 'es-AR', 'es-419', 'es-US', 'es-MX', 'es-ES'];
+  const pref = [C().loc, 'es-UY', 'es-AR', 'es-419', 'es-US', 'es-MX', 'es-ES'];
   for (const p of pref) {
     const v = vs.find(v => v.lang.replace('_', '-').toLowerCase() === p.toLowerCase());
     if (v) { esVoice = v; return; }
@@ -247,11 +418,13 @@ if ('speechSynthesis' in window) {
   pickVoice();
   speechSynthesis.onvoiceschanged = pickVoice;
 }
+let voiceFor = null;
 function say(text) {
   if (!('speechSynthesis' in window)) return toast(t('noTTS'));
+  if (!esVoice || voiceFor !== S.country) { pickVoice(); voiceFor = S.country; }
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(String(text).replace(/^no\s+/, 'no '));
-  u.lang = esVoice ? esVoice.lang : 'es-UY';
+  u.lang = esVoice ? esVoice.lang : C().loc;
   if (esVoice) u.voice = esVoice;
   u.rate = 0.95;
   speechSynthesis.speak(u);
@@ -334,14 +507,10 @@ function seg(el, value, onChange) {
 /* ============================================================
    CLAUDE API
    ============================================================ */
-const UY = `Target variety: Uruguayan Spanish as used in Montevideo today. Not porteño, not generic Latin American, never Spain.
-- Informal register uses voseo (vos tenés, vení, fijate). Formal register uses usted. Never use vosotros.
-- Prefer Uruguayan vocabulary where it differs: ómnibus (bus), championes (sneakers), campera (jacket), gurí/gurisa (kid), liceo (secondary school), frutilla, boniato, morrón, remera, celular, auto, almacén, "ta" (ok).
-- In casual text, Uruguayans often mix tú with voseo verbs ("tú sabés"). That is real usage here; do not treat it as an error in casual register.`;
-const EXPL = () => S.explain === 'en' ? 'English' : 'Spanish (natural Uruguayan Spanish, voseo where it fits)';
+const EXPL = () => S.explain === 'en' ? 'English' : `Spanish (natural ${C().adj} Spanish)`;
 
 async function ask({ system, content, maxTokens = 1200, photo = false }) {
-  if (!S.key) throw new Error(t('err.nokey'));
+  if (!S.key) { const e = new Error(t('err.nokey')); e.code = 'nokey'; throw e; }
   if (!navigator.onLine) throw new Error(t('err.offline'));
   const text = providerOf(S.key) === 'gemini'
     ? await askGemini(system, content, maxTokens, true)
@@ -421,7 +590,12 @@ function parseJSON(text) {
   catch { throw new Error(t('err.unreadable')); }
 }
 function loading(el, msg) { el.innerHTML = `<p class="msg"><span class="spinner"></span>${esc(msg)}</p>`; }
-function failed(el, e) { el.innerHTML = `<p class="msg err">${esc(e.message || e)}</p>`; }
+function failed(el, e) {
+  el.innerHTML = `<p class="msg err">${esc(e.message || e)}</p>` +
+    (e && e.code === 'nokey' ? `<div class="row"><button class="primary" data-guide>${t('g.setup')}</button></div>` : '');
+  const g = $('[data-guide]', el);
+  if (g) g.onclick = openGuide;
+}
 
 /* ============================================================
    CONJUGATE
@@ -544,14 +718,21 @@ function fillCompounds(v) {
 }
 
 /* The person/tense a reverse-lookup hit points at, in "By person" terms. */
+const showVos = () => !['tu', 'es'].includes(C().mode);
+const vosFirst = () => C().mode === 'vos';
+const showVosotros = () => S.vosotros || C().mode === 'es';
+
 function personForHit(v, h) {
   if (!h || h.i === -1 || h.i == null) return null;
-  if (h.i === 'vos') return 'vos';
-  if (h.i === 1) {
+  let k;
+  if (h.i === 'vos') k = 'vos';
+  else if (h.i === 1) {
     const vf = vosFormFor(v, h.tense);
-    return vf && vf !== v.t[h.tense][1] ? 'tu' : 'vos';
-  }
-  return IDX_TO_KEY[h.i];
+    k = vf && vf !== v.t[h.tense][1] ? 'tu' : (vosFirst() ? 'vos' : 'tu');
+  } else k = IDX_TO_KEY[h.i];
+  if (k === 'vos' && !showVos()) k = 'tu';
+  if (k === 'vosotros' && !showVosotros()) k = null;
+  return k;
 }
 
 let lastQ = '';   // folded query, for highlighting the form you typed
@@ -567,15 +748,23 @@ function tenseTable(v, tense) {
   const vos = vosFormFor(v, tense);
   const rows = [];
   if (forms[0]) rows.push(['yo', forms[0], '']);
-  if (vos && vos !== forms[1]) {
-    rows.push(['vos', vos, 'vos']);
-    if (forms[1]) rows.push(['tú', forms[1], '']);
+  const tuRow = forms[1] ? ['tú', forms[1], vosFirst() ? '' : 'vos'] : null;
+  if (!showVos()) {
+    if (tuRow) rows.push(tuRow);
+  } else if (vos && vos !== forms[1]) {
+    const vosRow = ['vos', vos, vosFirst() ? 'vos' : ''];
+    if (vosFirst()) { rows.push(vosRow); if (tuRow) rows.push(tuRow); }
+    else { if (tuRow) rows.push(tuRow); rows.push(vosRow); }
   } else if (forms[1]) {
-    rows.push(['vos / tú', forms[1], 'vos']);
+    rows.push([vosFirst() ? 'vos / tú' : 'tú / vos', forms[1], 'vos']);
+  }
+  if (C().mode === 'cl' && tense === 'ind_pres') {
+    const cl = chileanPresent(v.vos && v.vos.ind_pres);
+    if (cl && cl !== forms[1]) rows.push(['tú (chileno)', cl, '']);
   }
   if (forms[2]) rows.push([PERSONS[2], forms[2], '']);
   if (forms[3]) rows.push([PERSONS[3], forms[3], '']);
-  if (S.vosotros && forms[4]) rows.push([PERSONS[4], forms[4], '']);
+  if (showVosotros() && forms[4]) rows.push([PERSONS[4], forms[4], '']);
   if (forms[5]) rows.push([PERSONS[5], forms[5], '']);
   return `<div class="tense"><h3>${esc(es)} <span>${esc(en)}</span></h3>` +
     rows.map(([p, f, c]) => `<div class="frow ${c}${isHit(f) ? ' hit' : ''}" data-say="${esc(f)}"><span class="p">${esc(p)}</span><span class="f">${esc(f)}</span></div>`).join('') +
@@ -599,8 +788,14 @@ function personForm(v, tense, pk) {
 }
 
 function renderPersonView(v, force) {
-  if (S.person === 'vosotros' && !S.vosotros) S.person = 'vos';
-  const chips = PKEYS.filter(p => p.k !== 'vosotros' || S.vosotros).map(p =>
+  if (S.person === 'vosotros' && !showVosotros()) S.person = vosFirst() ? 'vos' : 'tu';
+  if (S.person === 'vos' && !showVos()) S.person = 'tu';
+  let keys = PKEYS.filter(p => (p.k !== 'vosotros' || showVosotros()) && (p.k !== 'vos' || showVos()));
+  if (!vosFirst()) {
+    const vi = keys.findIndex(p => p.k === 'vos'), ti = keys.findIndex(p => p.k === 'tu');
+    if (vi >= 0 && ti >= 0) { const tmp = keys[vi]; keys[vi] = keys[ti]; keys[ti] = tmp; }
+  }
+  const chips = keys.map(p =>
     `<button class="pchip" data-p="${p.k}" aria-pressed="${p.k === S.person}">${esc(p.label)}</button>`).join('');
   const line = (label, f, alt) => `<div class="pline${isHit(f) || isHit(alt) ? ' hit' : ''}" data-say="${esc(f)}">
       <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">${t('or')} ${esc(alt)}</span>` : ''}</span></div>`;
@@ -665,7 +860,7 @@ function renderVerb(inf, { note = '', ai = false, hit = null } = {}) {
       ${sayBtn(inf)}<span id="conj-star"></span>
     </div>
     ${v.ger || v.pp ? `<p class="parts">gerundio <b class="speakable" data-say="${esc(v.ger)}">${esc(v.ger)}</b> &nbsp; participio <b class="speakable" data-say="${esc(v.pp)}">${esc(v.pp)}</b></p>` : ''}
-    ${S.byPerson ? '' : `<div class="vosbox">
+    ${S.byPerson || !vosFirst() ? '' : `<div class="vosbox">
       ${cell(t('vb.present'), vp.ind_pres)}
       ${cell(t('vb.command'), vp.imp_aff)}
       ${cell(t('vb.neg'), vosNeg, tuNeg)}
@@ -729,8 +924,8 @@ function runConj() {
   if (b) b.onclick = () => aiConjugate(raw);
 }
 
-const CONJ_SYS = `You conjugate Spanish verbs for a learner in Uruguay.
-${UY}
+function conjSystem() { return `You conjugate Spanish verbs for a learner in ${C().en}.
+${VARIETY()}
 Reply with JSON only, no prose, no code fences.
 If the input is a conjugated form, conjugate its infinitive. If it is not a Spanish verb, reply {"error":"not a verb"}.
 Schema:
@@ -738,13 +933,13 @@ Schema:
  "t":{"ind_pres":[6],"ind_pret":[6],"ind_imp":[6],"ind_fut":[6],"ind_cond":[6],"sub_pres":[6],"sub_imp":[6],"sub_fut":[6],"imp_aff":[6],"imp_neg":[6]},
  "vos":{"ind_pres":str,"imp_aff":str,"sub_pres":str}}
 Each [6] array is [yo, tú, él/usted, nosotros, vosotros, ellos/ustedes]. Imperative arrays use "" for yo; imp_neg entries start with "no ". Reflexive verbs include the pronoun ("me lavo", "lavate").
-vos.sub_pres uses the Rioplatense stress (podás, not puedás).`;
+vos.sub_pres uses the Rioplatense stress (podás, not puedás). Always fill vos, even where voseo is not used locally.`; }
 
 async function aiConjugate(word) {
   const out = $('#conj-out');
   loading(out, t('conj.working', word));
   try {
-    const d = await ask({ system: CONJ_SYS, content: word, maxTokens: 2000 });
+    const d = await ask({ system: conjSystem(), content: word, maxTokens: 2000 });
     if (d.error || !d.infinitive || !d.t) throw new Error(t('conj.notVerb', word));
     AIVERBS[d.infinitive] = { en: d.en, ger: d.ger, pp: d.pp, t: d.t, vos: d.vos || {}, g: {} };
     store.set('vos.aiverbs', AIVERBS);
@@ -769,18 +964,18 @@ function openVerb(inf) {
 /* ============================================================
    WORD
    ============================================================ */
-function wordSystem() { return `You are a Spanish lexicographer writing for an English speaker who lives in Uruguay, level B2 working toward C1.
-${UY}
+function wordSystem() { return `You are a Spanish lexicographer writing for an English speaker who lives in ${C().en}, level B2 working toward C1.
+${VARIETY()}
 The input is a single word or short expression, in Spanish or English.
 - Spanish input: explain that word. Give 2 entries only if it is a homograph with unrelated meanings (el/la capital, el/la cura).
-- English input: give the 1 to 3 Spanish words a Uruguayan would actually use for it, most natural first, one entry each.
+- English input: give the 1 to 3 Spanish words people in ${C().en} would actually use for it, most natural first, one entry each.
 Reply with JSON only, no prose, no code fences:
 {"query_lang":"es"|"en","entries":[{
   "word":str,
   "gender":"el"|"la"|"el/la"|null,
   "pos":str (part of speech),
   "verb_infinitive":str|null (the infinitive if this entry is a verb),
-  "senses":[{"def":str (short),"example":str (natural Uruguayan Spanish sentence),"example_en":str|null}],
+  "senses":[{"def":str (short),"example":str (natural ${C().adj} Spanish sentence),"example_en":str|null}],
   "synonyms":[str],
   "antonyms":[str],
   "uruguay":str|null,
@@ -796,8 +991,8 @@ Reply with JSON only, no prose, no code fences:
 }]}
 senses: 1 to 4, most common first.
 gender: for nouns only; "el/la" when the same form is used for both (el/la periodista). For adjectives put the feminine in the word field like "cansado, cansada".
-synonyms/antonyms: up to 6 each, words actually used in Uruguay. Empty arrays if none fit.
-uruguay: one sentence only if usage in Uruguay differs from general Spanish (different word preferred, different meaning, regional connotation). Otherwise null.
+synonyms/antonyms: up to 6 each, words actually used in ${C().en}. Empty arrays if none fit.
+uruguay: one sentence only if usage in ${C().en} genuinely differs from general Spanish (different word preferred, different meaning, regional connotation). Otherwise null. (The field is called uruguay for historical reasons; it is about ${C().en}.)
 careful: one sentence only for a real false friend, vulgar/sexual double meaning in the Río de la Plata, or register trap. Otherwise null.
 roots: help the learner decode and remember the word.
 - parts: split into prefix / root / suffix with a short meaning for each (des- "undo", cubrir "to cover", -miento "the act of"). Only real, standard morphology. A simple word with no useful split gets a single part.
@@ -808,7 +1003,7 @@ roots: help the learner decode and remember the word.
 Use null for roots only for interjections, slang like "ta", or proper nouns.
 ${S.explain === 'en'
   ? 'Language: write pos, def, example_en, literal, every meaning inside roots, and the "uruguay" and "careful" notes in English. pos uses English terms (noun, verb, adjective, adverb, expression).'
-  : 'Language: write pos, def, literal, every meaning inside roots, and the "uruguay" and "careful" notes in clear, natural Spanish that a C1 learner can follow, like a good monolingual dictionary (Uruguayan usage, voseo where it fits). pos uses Spanish terms (sustantivo, verbo, adjetivo, adverbio, expresión). Set example_en to null. roots.english still names English words, since that line is about English cognates.'}`; }
+  : 'Language: write pos, def, literal, every meaning inside roots, and the "uruguay" and "careful" notes in clear, natural Spanish that a C1 learner can follow, like a good monolingual dictionary (${C().adj} usage). pos uses Spanish terms (sustantivo, verbo, adjetivo, adverbio, expresión). Set example_en to null. roots.english still names English words, since that line is about English cognates.'}`; }
 
 async function runWord(q, cached) {
   const out = $('#word-out');
@@ -904,13 +1099,13 @@ function trSystem() {
     ? `Detect whether the source is Spanish or English. If it is ambiguous (a word valid in both, very short, or mixed), treat it as Spanish and translate into English.`
     : trDir === 'es-en' ? `The source is Spanish. Translate it into English.` : `The source is English. Translate it into Spanish.`;
   const reg = S.trReg === 'formal'
-    ? `Register for Spanish output: formal (usted, polished written Uruguayan Spanish, suitable for an email to a lawyer or a bank).`
-    : `Register for Spanish output: casual (voseo, how a Montevideo local would text a friend or talk to a neighbour).`;
-  return `You are a translator between English and Uruguayan Spanish for an English speaker who lives in Montevideo.
-${UY}
+    ? `Register for Spanish output: formal (usted, polished written ${C().adj} Spanish, suitable for an email to a lawyer or a bank).`
+    : `Register for Spanish output: casual (${C().casual}; how someone in ${C().place} would text a friend or talk to a neighbour).`;
+  return `You are a translator between English and ${C().adj} Spanish for an English speaker who lives in ${C().en}.
+${VARIETY()}
 ${dir}
 ${reg}
-When translating into English, give natural American English and explain Uruguayan slang or idioms in the note rather than translating them word for word.
+When translating into English, give natural American English and explain local slang or idioms in the note rather than translating them word for word.
 Reply with JSON only, no prose, no code fences:
 {"source_lang":"es"|"en","source_text":str,"translation":str,"alternatives":[{"text":str,"note":str}],"note":str|null}
 source_text: the exact source (for a photo, the text you read in it, keeping line breaks).
@@ -985,16 +1180,16 @@ seg($('#check-mode'), S.checkMode, v => { S.checkMode = v; saveSettings(); });
 
 function checkSystem() {
   const reg = S.checkReg === 'formal'
-    ? `Register: formal written Uruguayan Spanish (usted, no slang, the standard a professional would use in an email to a lawyer, a bank or a prospective employer). In this register, flag tú+voseo mixing and casual slang.`
-    : `Register: casual Uruguayan Spanish (voseo, the way a Montevideo local writes a WhatsApp message). Don't formalise it; keep contractions of speech and local slang that is correct.`;
+    ? `Register: formal written ${C().adj} Spanish (usted, no slang, the standard a professional would use in an email to a lawyer, a bank or a prospective employer). In this register, flag mixed forms of address and casual slang.`
+    : `Register: casual ${C().adj} Spanish (${C().casual}; the way someone in ${C().place} writes a WhatsApp message). Don't formalise it; keep contractions of speech and local slang that is correct.`;
   const mode = S.checkMode === 'push'
     ? `Strictness: push toward C1. Fix every error, and ALSO fix things that are grammatical but sound non-native, stiff, or like a translation from English (calques, wrong collocations, unnatural word order, weak verb choice). Mark those as kind "style".`
     : `Strictness: errors only. Fix grammar, spelling, accents, agreement, wrong prepositions, wrong mood/tense, and words that are actually wrong. Leave correct-but-plain phrasing alone.`;
   const spoken = checkDictated
     ? `This text was dictated by voice, so it has no reliable punctuation, capitalisation or accents. Fix those silently in "corrected" but do NOT list them in changes. List only real grammar and word-choice problems: agreement, gender, tense and mood, prepositions, calques, wrong or unnatural words.`
     : '';
-  return `You correct Spanish written by an English speaker who lives in Uruguay (B2, working toward C1).
-${UY}
+  return `You correct Spanish written by an English speaker who lives in ${C().en} (B2, working toward C1).
+${VARIETY()}
 ${reg}
 ${mode}
 ${spoken}
@@ -1129,6 +1324,7 @@ function reopen(item) {
     return openVerb(item.key);
   }
   if (item.type === 'word') { go('word', { focus: false }); return runWord(item.key, item.data); }
+  if (item.type === 'ident') { go('word', { focus: false }); return renderIdent(item.data, null); }
   if (item.type === 'tr') {
     go('tr', { focus: false });
     $('#tr-q').value = item.data?.source_text || item.key || '';
@@ -1178,6 +1374,10 @@ function renderMore(kind) {
     const masked = S.key ? S.key.slice(0, 8) + '…' + S.key.slice(-4) : '';
     const prov = providerOf(S.key);
     body.innerHTML = `
+      <label class="field-label" for="set-country">${t('set.country')}</label>
+      <select id="set-country">${COUNTRIES.map(c => `<option value="${c.k}" ${c.k === C().k ? 'selected' : ''}>${esc(S.ui === 'en' ? c.en : c.es)}</option>`).join('')}</select>
+      <p class="help">${t('set.countryHelp')}</p>
+
       <label class="field-label" for="set-ui">${t('set.ui')}</label>
       <div class="seg" id="set-ui" role="radiogroup" aria-label="${t('set.ui')}">
         <button data-v="es">Español</button><button data-v="en">English</button>
@@ -1199,6 +1399,7 @@ function renderMore(kind) {
       <p class="help">${S.key ? t('set.keySaved', esc(masked), t('prov.' + prov)) : t('set.keyNone')} ${t('set.keyWhere')}
       ${t('set.getKeys')} <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> · <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.</p>
       ${S.key ? `<p class="help ${prov === 'gemini' ? 'warnnote' : ''}">${prov === 'gemini' ? t('set.geminiTip') : t('set.anthropicTip')}</p>` : ''}
+      <div class="settings-row"><button class="link" id="open-guide">${t('g.open')}</button></div>
 
       <label class="field-label">${t('set.stored')}</label>
       <p class="help">${t('set.storedLine', SAVED.length, HIST.length, Object.keys(AIVERBS).length)}</p>
@@ -1206,6 +1407,13 @@ function renderMore(kind) {
 
       <label class="field-label">${t('set.about')}</label>
       <p class="help">${t('set.aboutText', VERSION)}</p>`;
+    $('#set-country').onchange = e => {
+      S.country = e.target.value;
+      S.person = vosFirst() ? 'vos' : 'tu';
+      esVoice = null;
+      saveSettings(); refreshLanguage(); toast(t('country.set', cName()));
+    };
+    $('#open-guide').onclick = openGuide;
     seg($('#set-ui'), S.ui, v => { S.ui = v; saveSettings(); refreshLanguage(); toast(t('ui.set')); });
     seg($('#set-explain'), S.explain, v => { S.explain = v; saveSettings(); toast(t('explain.' + v)); });
     $('#save-key').onclick = () => {
@@ -1280,21 +1488,26 @@ function renderStage(target) {
   box.innerHTML = `<div class="stage">
     <div class="stage-img"></div>
     <p class="help" style="margin:8px 0 0">${t('stage.hint')}</p>
+    ${target === 'word' ? `<input type="text" class="focusbox" id="word-focus" placeholder="${t('stage.focusPh')}" value="${esc(st.focus || '')}" autocomplete="off">` : ''}
     <div class="row">
       <button class="icon cam" data-rot aria-label="${t('aria.rotate')}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>
       </button>
       <button class="ghost" data-cancel>${t('stage.cancel')}</button>
-      <button class="primary grow" data-send>${target === 'tr' ? t('stage.sendTr') : t('stage.sendRead')}</button>
+      <button class="primary grow" data-send>${target === 'tr' ? t('stage.sendTr') : target === 'word' ? t('stage.sendWord') : t('stage.sendRead')}</button>
     </div>
   </div>`;
   $('.stage-img', box).appendChild(drawRotated(st.img, st.rot, 900));
+  const fb = $('#word-focus', box);
+  if (fb) fb.oninput = () => { st.focus = fb.value; };
   $('[data-rot]', box).onclick = () => { st.rot = (st.rot + 90) % 360; renderStage(target); };
   $('[data-cancel]', box).onclick = () => closeStage(target);
   $('[data-send]', box).onclick = () => {
     const b64 = drawRotated(st.img, st.rot, 1568).toDataURL('image/jpeg', 0.85).split(',')[1];
+    const focus = (st.focus || '').trim();
     closeStage(target);
     if (target === 'tr') runTranslate({ image: b64 });
+    else if (target === 'word') runIdentify(b64, focus);
     else readForCheck(b64);
   };
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -1337,6 +1550,130 @@ for (const target of Object.keys(BOX)) {
 }
 
 /* ============================================================
+   PALABRA: "¿Qué es esto?" photo lookup
+   ============================================================ */
+function identSystem() {
+  return `You identify what is in a photo for a Spanish learner who lives in ${C().en}, naming things the way people there say them.
+${VARIETY()}
+List the distinct objects, foods, dishes, drinks, animals, plants or places you can see, most prominent first, at most 8. Skip background filler (walls, floor, sky, a plain table) unless it is the point of the photo or the user asked about it.
+Reply with JSON only, no prose, no code fences:
+{"items":[{"word":str,"article":"el"|"la"|"los"|"las"|null,"general":str|null,"desc":str|null,"where":str|null,"unsure":bool}],"scene":str|null}
+word: the term used in ${C().en}, singular unless the plural is the natural way to name it (papas fritas).
+article: the definite article that goes with word; null for proper names.
+general: the more widespread Spanish term only if it differs from word (fresa for frutilla); else null.
+desc: for dishes, drinks, or anything a learner might not recognise, one short line in ${EXPL()}; else null.
+where: a short position hint in ${EXPL()} only when needed to tell similar things apart ("the small round green one, front left"); else null.
+unsure: true if you are not confident about the identification or the local name.
+scene: one short sentence in ${EXPL()} describing the photo, or null.
+If nothing is identifiable, reply {"items":[]}.`;
+}
+async function runIdentify(b64, focus) {
+  const out = $('#word-out');
+  loading(out, t('ident.working'));
+  try {
+    const d = await ask({
+      system: identSystem(), maxTokens: 1600, photo: true,
+      content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
+                { type: 'text', text: focus ? `Focus on: ${focus}` : 'Name what you see.' }]
+    });
+    const items = (d.items || []).filter(x => x && x.word);
+    if (!items.length) throw new Error(t('ident.none'));
+    d.items = items;
+    renderIdent(d, b64);
+    addHistory({ id: 'ident:' + Date.now(), type: 'ident', key: items[0].word,
+      label: items.map(x => x.word).join(', ').slice(0, 90), sub: d.scene || '', data: d });
+  } catch (e) { failed(out, e); }
+}
+function renderIdent(d, b64) {
+  const out = $('#word-out');
+  const items = d.items || [];
+  out.innerHTML = `<div class="card">
+    ${b64 ? `<img class="thumb zoomable" src="data:image/jpeg;base64,${b64}" alt="${t('alt.photo')}">` : ''}
+    ${d.scene ? `<p class="tr-src">${esc(d.scene)}</p>` : ''}
+    ${items.map((x, i) => `<div class="ident">
+      <div class="head">
+        <div style="flex:1">
+          <div class="iw">${x.article ? `<span class="art">${esc(x.article)}</span> ` : ''}${esc(x.word)}${x.unsure ? ` <span class="tag warn">${t('ident.unsure')}</span>` : ''}</div>
+          ${x.general ? `<div class="ig">${t('ident.general')} ${esc(x.general)}</div>` : ''}
+          ${x.desc ? `<div class="idesc">${esc(x.desc)}</div>` : ''}
+          ${x.where ? `<div class="ig">${esc(x.where)}</div>` : ''}
+        </div>
+        ${sayBtn((x.article ? x.article + ' ' : '') + x.word)}<span data-istar="${i}"></span>
+      </div>
+      <button class="link" data-look="${i}">${t('ident.look')}</button>
+    </div>`).join('')}
+  </div>`;
+  items.forEach((x, i) => {
+    $(`[data-istar="${i}"]`, out).replaceWith(starBtn({ id: 'word:' + fold(x.word), type: 'word', key: x.word,
+      label: x.word, sub: x.desc || x.general || '' }));
+    $(`[data-look="${i}"]`, out).onclick = () => { window.scrollTo(0, 0); runWord(x.word); };
+  });
+}
+
+/* ============================================================
+   SETUP GUIDE (first launch with no key, or on request)
+   ============================================================ */
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const STANDALONE = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function openGuide() {
+  const g = $('#guide');
+  const install = STANDALONE() ? '' : `<div class="gnote">${IOS ? t('g.installIos') : t('g.installAndroid')}</div>`;
+  $('#guide-body').innerHTML = `
+    <div class="ghead"><h2>${t('g.title')}</h2>
+      <button class="icon" id="g-close" aria-label="${t('g.close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <p>${t('g.intro')}</p>
+    ${install}
+    <h3>${t('g.freeTitle')}</h3>
+    <ol><li>${t('g.free1')}</li><li>${t('g.free2')}</li><li>${t('g.free3')}</li><li>${t('g.free4')}</li></ol>
+    <p class="help warnnote">${t('set.geminiTip')}</p>
+    <h3>${t('g.paidTitle')}</h3>
+    <ol><li>${t('g.paid1')}</li><li>${t('g.paid2')}</li><li>${t('g.paid3')}</li><li>${t('g.paid4')}</li></ol>
+    <label class="field-label" for="g-key">${t('g.paste')}</label>
+    <input type="password" id="g-key" placeholder="AIza…  /  sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="settings-row">
+      <button class="primary" id="g-save">${t('g.saveTest')}</button>
+      <button class="ghost" id="g-later">${t('g.later')}</button>
+    </div>
+    <p class="msg" id="g-status" hidden></p>`;
+  g.hidden = false;
+  document.body.style.overflow = 'hidden';
+  $('#g-close').onclick = closeGuide;
+  $('#g-later').onclick = closeGuide;
+  $('#g-save').onclick = async () => {
+    const v = $('#g-key').value.trim();
+    const st = $('#g-status');
+    if (!v) return toast(t('key.pasteFirst'));
+    if (!/^(sk-ant-|AIza)/.test(v)) toast(t('key.unknown'));
+    S.key = v; saveSettings();
+    const b = $('#g-save'); b.disabled = true;
+    st.hidden = false; st.className = 'msg'; st.innerHTML = `<span class="spinner"></span>${t('set.testing')}`;
+    try {
+      await ask({ system: 'Reply with JSON only.', content: 'Reply with {"ok":true}', maxTokens: 30 });
+      st.textContent = t('g.ready');
+      toast(t('key.works'));
+      setTimeout(closeGuide, 900);
+    } catch (e) { st.className = 'msg err'; st.textContent = e.message || String(e); }
+    b.disabled = false;
+  };
+}
+function closeGuide() {
+  $('#guide').hidden = true;
+  document.body.style.overflow = '';
+  S.guideSeen = true; saveSettings();
+  if (S.view === 'more') renderMore(S.moreTab);
+}
+
+/* iPhone: fixed bars stay under the keyboard, so lift the tab bar above it. */
+if (IOS && window.visualViewport) {
+  const lift = () => {
+    const kb = Math.max(0, window.innerHeight - visualViewport.height - visualViewport.offsetTop);
+    $('.tabs').style.transform = kb > 80 ? `translateY(-${kb}px)` : '';
+  };
+  visualViewport.addEventListener('resize', lift);
+  visualViewport.addEventListener('scroll', lift);
+}
+
+/* ============================================================
    DICTATION (Chrome speech recognition, free, needs signal)
    ============================================================ */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1369,7 +1706,7 @@ function appendDictated(target, text) {
 function startDictation(target) {
   if (!SR) return toast(t('dict.unsupported'));
   if (dict) { const same = dict.target === target; stopDictation(); if (same) return; }
-  const langs = target === 'tr' && trMicLang === 'en' ? ['en-US'] : ['es-UY', 'es-AR', 'es-419'];
+  const langs = target === 'tr' && trMicLang === 'en' ? ['en-US'] : [...new Set([C().loc, 'es-419', 'es-ES'])];
   const d = { target, want: true, lastHeard: Date.now(), langs };
   dict = d;
   const begin = () => {
@@ -1378,7 +1715,7 @@ function startDictation(target) {
     rec.lang = d.langs[0];
     // Android Chrome repeats text in continuous mode, so there we listen one
     // phrase at a time and restart; elsewhere continuous mode is fine.
-    rec.continuous = !ANDROID;
+    rec.continuous = IOS || !ANDROID;
     rec.interimResults = true;
     rec.onresult = e => {
       let interim = '';
@@ -1391,17 +1728,21 @@ function startDictation(target) {
       d.lastHeard = Date.now();
     };
     rec.onerror = e => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { d.want = false; toast(t('dict.perm')); }
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') {
+        d.want = false;
+        if (IOS) { toast(t('dict.iosFallback')); setTimeout(() => $(BOX[target]).focus(), 50); }
+        else toast(t('dict.perm'));
+      }
       else if (e.error === 'network') { d.want = false; toast(t('dict.net')); }
       else if (e.error === 'language-not-supported' && d.langs.length > 1) d.langs.shift();
     };
     rec.onend = () => {
       showInterim(target, '');
       if (dict !== d) return;
-      if (d.want && Date.now() - d.lastHeard < 60000) {
+      if (d.want && !IOS && Date.now() - d.lastHeard < 60000) {
         try { begin(); return; } catch {}
       }
-      if (d.want && Date.now() - d.lastHeard >= 60000) toast(t('dict.silence'));
+      if (d.want && !IOS && Date.now() - d.lastHeard >= 60000) toast(t('dict.silence'));
       dict = null; paintMics();
     };
     rec.start();
@@ -1438,6 +1779,7 @@ paintClear('tr'); paintClear('check');
 if (!SR) $$('[data-mic], #tr-miclang').forEach(b => b.hidden = true);
 seg($('#more-seg'), S.moreTab, v => { S.moreTab = v; saveSettings(); renderMore(v); });
 go(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : S.view, { focus: false });
+if (!S.key && !S.guideSeen) setTimeout(openGuide, 300);
 runConj();
 loadVerbs();
 

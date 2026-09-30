@@ -8,6 +8,9 @@ _None open._
 
 ## Proposed, not yet approved
 
+- **"¿Qué es esto?" photo lookup** on the Palabra tab. Snap or pick a photo, get every object or dish in it named the way it's said in Uruguay (el/la + word, most prominent first, up to about 8), with the general term when it differs (frutilla, fresa elsewhere), a one-line description for dishes (chivito, torta frita), and a flag when the model isn't sure. Each item: tap to hear, star, and open a full Palabra lookup. Uses the photo model. _Small-medium._
+- **Country / variety setting** replacing the hard-coded Uruguay tuning. Controls: the variety block in every AI prompt (vocabulary, slang, voseo vs tú, formality norms); which pronoun leads in Conjugar (vos for Uruguay, Argentina, Paraguay, most of Central America; tú for Peru, Mexico, Bolivia etc.; vosotros shown for Spain); dictation and voice locale; and the "acá" tag. Chilean voseo (pensái, cachai) has different verb forms and would start as tú-first with a note. AI quality is weaker for smaller varieties. New installs could guess the country from the phone's language setting. _Medium._
+
 - Tappable word-family entries on Word cards (each tap is a new lookup). Parked: maybe later.
 - Report button on AI results that copies input + output in one tap, for faster feedback.
 - Show the version number more prominently so it's obvious when an update has landed.

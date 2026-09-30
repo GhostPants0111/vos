@@ -22,10 +22,10 @@
     <input type="search" id="conj-q" placeholder="hablar, dijeran, andate…" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
   </div>
   <div class="chips">
-    <label class="chip"><input type="checkbox" id="opt-person"><span>Por persona</span></label>
-    <label class="chip"><input type="checkbox" id="opt-vosotros"><span>Vosotros</span></label>
-    <label class="chip"><input type="checkbox" id="opt-se"><span>Formas en -se</span></label>
-    <label class="chip"><input type="checkbox" id="opt-rare"><span>Tiempos raros</span></label>
+    <label class="chip"><input type="checkbox" id="opt-person"><span data-i18n="chip.person">Por persona</span></label>
+    <label class="chip"><input type="checkbox" id="opt-vosotros"><span data-i18n="chip.vosotros">Vosotros</span></label>
+    <label class="chip"><input type="checkbox" id="opt-se"><span data-i18n="chip.se">Formas en -se</span></label>
+    <label class="chip"><input type="checkbox" id="opt-rare"><span data-i18n="chip.rare">Tiempos raros</span></label>
   </div>
   <div id="conj-out"></div>
 </section>
@@ -33,8 +33,8 @@
 <!-- Palabra -->
 <section class="view" id="view-word" data-view="word" hidden>
   <form class="searchbar" id="word-form">
-    <input type="search" id="word-q" placeholder="una palabra, o una en inglés" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
-    <button class="primary" type="submit">Buscar</button>
+    <input type="search" id="word-q" placeholder="una palabra, o una en inglés" data-i18n-ph="ph.word" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search">
+    <button class="primary" type="submit" data-i18n="btn.search">Buscar</button>
   </form>
   <div id="word-out"></div>
 </section>
@@ -43,29 +43,29 @@
 <section class="view" id="view-tr" data-view="tr" hidden>
   <div class="dirbar">
     <span id="tr-from">Detectar</span>
-    <button class="icon small" id="tr-swap" aria-label="Cambiar dirección">
+    <button class="icon small" id="tr-swap" aria-label="Cambiar dirección" data-i18n-aria="aria.swap">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 7h12l-3-3M17 17H5l3 3"/></svg>
     </button>
     <span id="tr-to">…</span>
   </div>
   <div class="tawrap">
-    <textarea id="tr-q" rows="4" placeholder="Escribí o dictá en español o inglés" spellcheck="false"></textarea>
-    <button class="icon small clear" data-clear="tr" aria-label="Borrar" hidden>
+    <textarea id="tr-q" rows="4" placeholder="Escribí o dictá en español o inglés" data-i18n-ph="ph.tr" spellcheck="false"></textarea>
+    <button class="icon small clear" data-clear="tr" aria-label="Borrar" data-i18n-aria="aria.clear" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
   <p class="interim" id="tr-interim" hidden></p>
   <div class="row">
-    <div class="seg" id="tr-reg" role="radiogroup" aria-label="Registro">
-      <button data-v="casual">Informal</button><button data-v="formal">Formal</button>
+    <div class="seg" id="tr-reg" role="radiogroup" aria-label="Registro" data-i18n-aria="aria.reg">
+      <button data-v="casual" data-i18n="reg.casual">Informal</button><button data-v="formal" data-i18n="reg.formal">Formal</button>
     </div>
   </div>
   <div class="row">
-    <label class="icon cam" aria-label="Sacar una foto">
+    <label class="icon cam" aria-label="Sacar una foto" data-i18n-aria="aria.photo">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
       <input type="file" accept="image/*" capture="environment" data-img="tr" hidden>
     </label>
-    <label class="icon cam" aria-label="Elegir una foto">
+    <label class="icon cam" aria-label="Elegir una foto" data-i18n-aria="aria.gallery">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></svg>
       <input type="file" accept="image/*" data-img="tr" hidden>
     </label>
@@ -73,7 +73,7 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
     </button>
     <button class="icon cam langbtn" id="tr-miclang" aria-label="Idioma del dictado: español">ES</button>
-    <button class="primary grow" id="tr-go">Traducir</button>
+    <button class="primary grow" id="tr-go" data-i18n="btn.translate">Traducir</button>
   </div>
   <div id="tr-stage"></div>
   <div id="tr-out"></div>
@@ -82,33 +82,33 @@
 <!-- Corregir -->
 <section class="view" id="view-check" data-view="check" hidden>
   <div class="tawrap">
-    <textarea id="check-q" rows="6" placeholder="Escribí algo, dictalo o sacale una foto." spellcheck="false"></textarea>
-    <button class="icon small clear" data-clear="check" aria-label="Borrar" hidden>
+    <textarea id="check-q" rows="6" placeholder="Escribí algo, dictalo o sacale una foto." data-i18n-ph="ph.check" spellcheck="false"></textarea>
+    <button class="icon small clear" data-clear="check" aria-label="Borrar" data-i18n-aria="aria.clear" hidden>
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
     </button>
   </div>
   <p class="interim" id="check-interim" hidden></p>
   <div class="row wrap">
-    <div class="seg" id="check-reg" role="radiogroup" aria-label="Registro">
-      <button data-v="casual">Informal</button><button data-v="formal">Formal</button>
+    <div class="seg" id="check-reg" role="radiogroup" aria-label="Registro" data-i18n-aria="aria.reg">
+      <button data-v="casual" data-i18n="reg.casual">Informal</button><button data-v="formal" data-i18n="reg.formal">Formal</button>
     </div>
-    <div class="seg" id="check-mode" role="radiogroup" aria-label="Qué tan estricto">
-      <button data-v="errors">Solo errores</button><button data-v="push">Exigime</button>
+    <div class="seg" id="check-mode" role="radiogroup" aria-label="Qué tan estricto" data-i18n-aria="aria.strict">
+      <button data-v="errors" data-i18n="mode.errors">Solo errores</button><button data-v="push" data-i18n="mode.push">Exigime</button>
     </div>
   </div>
   <div class="row">
-    <label class="icon cam" aria-label="Sacar una foto">
+    <label class="icon cam" aria-label="Sacar una foto" data-i18n-aria="aria.photo">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
       <input type="file" accept="image/*" capture="environment" data-img="check" hidden>
     </label>
-    <label class="icon cam" aria-label="Elegir una foto">
+    <label class="icon cam" aria-label="Elegir una foto" data-i18n-aria="aria.gallery">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20 16l-5-5-8 8"/></svg>
       <input type="file" accept="image/*" data-img="check" hidden>
     </label>
     <button class="icon cam mic" data-mic="check" aria-label="Dictar">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
     </button>
-    <button class="primary grow" id="check-go">Corregir</button>
+    <button class="primary grow" id="check-go" data-i18n="btn.check">Corregir</button>
   </div>
   <div id="check-stage"></div>
   <div id="check-read"></div>
@@ -117,8 +117,8 @@
 
 <!-- Más -->
 <section class="view" id="view-more" data-view="more" hidden>
-  <div class="seg full" id="more-seg" role="radiogroup" aria-label="Sección">
-    <button data-v="saved">Guardados</button><button data-v="history">Historial</button><button data-v="settings">Ajustes</button>
+  <div class="seg full" id="more-seg" role="radiogroup" aria-label="Sección" data-i18n-aria="aria.section">
+    <button data-v="saved" data-i18n="more.saved">Guardados</button><button data-v="history" data-i18n="more.history">Historial</button><button data-v="settings" data-i18n="more.settings">Ajustes</button>
   </div>
   <div id="more-body"></div>
 </section>
@@ -127,23 +127,23 @@
 
 <nav class="tabs" role="tablist">
   <button role="tab" data-go="conj">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span>Conjugar</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16M4 10h16M4 15h10M4 20h7"/></svg><span data-i18n="tab.conj">Conjugar</span>
   </button>
   <button role="tab" data-go="word">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M9 9h6M9 13h4"/></svg><span>Palabra</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4z"/><path d="M9 9h6M9 13h4"/></svg><span data-i18n="tab.word">Palabra</span>
   </button>
   <button role="tab" data-go="tr">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h9M7.5 3v2c0 4-2 7-4.5 8.5M5 9c1.5 2.5 3.5 4 6 4.5M13 21l4-10 4 10M14.5 17.5h5"/></svg><span>Traducir</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h9M7.5 3v2c0 4-2 7-4.5 8.5M5 9c1.5 2.5 3.5 4 6 4.5M13 21l4-10 4 10M14.5 17.5h5"/></svg><span data-i18n="tab.tr">Traducir</span>
   </button>
   <button role="tab" data-go="check">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l4-1 11-11-3-3L5 15zM14 6l3 3"/></svg><span>Corregir</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19l4-1 11-11-3-3L5 15zM14 6l3 3"/></svg><span data-i18n="tab.check">Corregir</span>
   </button>
   <button role="tab" data-go="more">
-    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span>Más</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z"/></svg><span data-i18n="tab.more">Más</span>
   </button>
 </nav>
 
-<div class="viewer" id="viewer" hidden><img alt="Tu foto"></div>
+<div class="viewer" id="viewer" hidden><img alt="Tu foto" data-i18n-alt="alt.photo"></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="app.js" defer></script>

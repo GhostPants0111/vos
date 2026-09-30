@@ -4,13 +4,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-12. **Fix: the language toggle should switch the interface, not the AI explanations.** Replace "Explicaciones de la IA" with an interface language toggle (Español / English) that changes every label, button, hint, toast and error. Needs a full English string set alongside the Spanish one.
-    Open question: what language the AI explanations use (the "why" on corrections, Traducir notes, acá / ojo notes). Options: always Spanish, always English, or follow the interface toggle. _Small-medium._
-
-13. **Remove the model pickers from Ajustes.** Lock text to Haiku and photos to Sonnet in code; change them in a future version if needed. Anyone whose saved setting differs gets reset to these. _Quick._
-
-14. **Google Gemini as an alternative AI provider**, so a stranger can use the app with a free Gemini key instead of paying for Anthropic.
-    Proposed: one key field that recognises the provider from the key itself (Anthropic keys start sk-ant-, Google keys start AIza), so there is no provider picker. Gemini uses gemini-3.8-flash (current newest Flash, on the free tier) for both text and photos. Ajustes gets a short note that Google's free tier may use what you send to improve their products. Needs a round of prompt testing against real Gemini output, which requires a free Gemini key from Google AI Studio. _Medium._
+_None open._
 
 ## Proposed, not yet approved
 
@@ -19,6 +13,16 @@ Feedback collected while using v1.0.0. Batched into the next release.
 - Show the version number more prominently so it's obvious when an update has landed.
 
 ## Done
+
+### v1.4.0 (2026-09-30)
+
+12. **Fix: the language toggle should switch the interface, not the AI explanations.** Replace "Explicaciones de la IA" with an interface language toggle (Español / English) that changes every label, button, hint, toast and error. Needs a full English string set alongside the Spanish one.
+    Shipped as two separate toggles in Ajustes: app language (Español / English) and AI explanation language. The explanation toggle now also drives Palabra: definitions, part of speech, and root meanings come back in Spanish (monolingual-dictionary style, no English example translation) or in English. New installs on a non-Spanish phone start in English. _Small-medium._
+
+13. **Remove the model pickers from Ajustes.** Lock text to Haiku and photos to Sonnet in code; change them in a future version if needed. Anyone whose saved setting differs gets reset to these. _Quick._
+
+14. **Google Gemini as an alternative AI provider**, so a stranger can use the app with a free Gemini key instead of paying for Anthropic.
+    Proposed: one key field that recognises the provider from the key itself (Anthropic keys start sk-ant-, Google keys start AIza), so there is no provider picker. Gemini uses gemini-3.8-flash (current newest Flash, on the free tier) for both text and photos. Ajustes gets a short note that Google's free tier may use what you send to improve their products. Needs a round of prompt testing against real Gemini output, which requires a free Gemini key from Google AI Studio. _Medium._
 
 ### v1.3.0 (2026-09-30)
 

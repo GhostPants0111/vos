@@ -5,11 +5,12 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.3.0';
-const MODELS = {
-  'claude-haiku-4-5': 'Haiku 4.5 (rápido, el más barato)',
-  'claude-sonnet-5-5': 'Sonnet 5.5 (más preciso, más caro)'
-};
+const VERSION = '1.4.0';
+// Fixed models. Change here, not in the app.
+const CLAUDE_TEXT = 'claude-haiku-4-5';
+const CLAUDE_PHOTO = 'claude-sonnet-5-5';
+const GEMINI_MODEL = 'gemini-3.8-flash';
+const providerOf = k => /^AIza/.test(k || '') ? 'gemini' : 'anthropic';
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -29,15 +30,197 @@ const store = {
   }
 };
 
+const STORED = store.get('vos.settings', null);
+const BROWSER_ES = /^es/i.test(navigator.language || '');
+const FRESH_EN = !STORED && !BROWSER_ES;   // brand-new install on a non-Spanish phone
 const DEFAULTS = {
-  key: '', model: 'claude-haiku-4-5', readModel: 'claude-sonnet-5-5', explain: 'es',
+  key: '', ui: FRESH_EN ? 'en' : 'es', explain: FRESH_EN ? 'en' : 'es',
   vosotros: false, se: false, rare: false,
   byPerson: false, person: 'vos', mood: 'ind',
   trReg: 'casual', checkReg: 'formal', checkMode: 'push',
   view: 'conj', moreTab: 'saved'
 };
-const S = Object.assign({}, DEFAULTS, store.get('vos.settings', {}));
+const S = Object.assign({}, DEFAULTS, STORED || {});
+delete S.model; delete S.readModel;   // model pickers were removed in 1.4
 const saveSettings = () => store.set('vos.settings', S);
+
+/* ---------------- interface language ---------------- */
+const I18N = {
+  es: {
+    'tab.conj': 'Conjugar', 'tab.word': 'Palabra', 'tab.tr': 'Traducir', 'tab.check': 'Corregir', 'tab.more': 'Más',
+    'chip.person': 'Por persona', 'chip.vosotros': 'Vosotros', 'chip.se': 'Formas en -se', 'chip.rare': 'Tiempos raros',
+    'ph.word': 'una palabra, o una en inglés', 'btn.search': 'Buscar',
+    'ph.tr': 'Escribí o dictá en español o inglés', 'btn.translate': 'Traducir',
+    'ph.check': 'Escribí algo, dictalo o sacale una foto.', 'btn.check': 'Corregir',
+    'reg.casual': 'Informal', 'reg.formal': 'Formal', 'mode.errors': 'Solo errores', 'mode.push': 'Exigime',
+    'more.saved': 'Guardados', 'more.history': 'Historial', 'more.settings': 'Ajustes',
+    'aria.swap': 'Cambiar dirección', 'aria.clear': 'Borrar', 'aria.photo': 'Sacar una foto', 'aria.gallery': 'Elegir una foto',
+    'aria.dictate': 'Dictar', 'aria.stopDictate': 'Dejar de dictar', 'aria.reg': 'Registro', 'aria.strict': 'Qué tan estricto',
+    'aria.section': 'Sección', 'aria.save': 'Guardar', 'aria.unsave': 'Quitar de guardados', 'aria.listen': 'Escuchar',
+    'aria.copy': 'Copiar', 'aria.remove': 'Quitar', 'aria.person': 'Persona', 'aria.mood': 'Modo', 'aria.rotate': 'Girar',
+    'aria.miclang': l => `Idioma del dictado: ${l === 'es' ? 'español' : 'inglés'}`,
+    'alt.photo': 'Tu foto',
+    'noTTS': 'Este dispositivo no puede leer en voz alta.',
+    'saved': 'Guardado', 'unsaved': 'Quitado de guardados', 'copied': 'Copiado', 'copyFail': 'No se pudo copiar',
+    'err.nokey': 'Primero agregá tu clave de API: Más → Ajustes.',
+    'err.offline': 'Estás sin conexión. Conjugar funciona igual; esto necesita internet.',
+    'err.net': 'No se pudo conectar con la API. Revisá la conexión y probá de nuevo.',
+    'err.key': 'La clave de API fue rechazada. Revisala en Ajustes.',
+    'err.rate': 'Demasiadas consultas seguidas. Esperá unos segundos y probá de nuevo.',
+    'err.busy': 'La API está saturada. Probá de nuevo en un rato.',
+    'err.credit': 'Tu cuenta de Anthropic se quedó sin crédito. Cargá saldo en la Console.',
+    'err.geminiQuota': 'Llegaste al límite gratis de Gemini. Esperá un rato o probá mañana.',
+    'err.api': (s, d) => `Error de la API ${s}${d ? ': ' + d : ''}`,
+    'err.unexpected': 'Llegó una respuesta inesperada. Probá de nuevo.',
+    'err.unreadable': 'Llegó una respuesta ilegible. Probá de nuevo.',
+    'err.truncated': 'La respuesta quedó cortada. Probá con un texto más corto.',
+    'err.notext': 'No encontré texto legible en esa foto.',
+    'err.image': 'No se pudo abrir esa imagen.',
+    'conj.loadFail': 'No se pudieron cargar los verbos. Abrí la app una vez con conexión.',
+    'conj.loading': 'Cargando verbos…',
+    'conj.empty': 'Escribí un infinitivo para ver todas sus formas, o pegá cualquier forma que te encontraste, como <b>dijeran</b>, <b>sos</b> o <b>andate</b>, para saber qué es. Tocá una forma para escucharla.',
+    'conj.multi': r => `${r} puede ser de más de un verbo:`,
+    'conj.notFound': r => `“${r}” no está entre los 638 verbos de la base.`,
+    'conj.askAI': 'Pedirle a la IA que lo conjugue',
+    'conj.working': w => `Conjugando ${w}…`,
+    'conj.notVerb': w => `“${w}” no parece un verbo en español.`,
+    'conj.aiWarn': 'Este verbo no está en la base, así que las tablas las generó la IA. Verificá lo que sea importante.',
+    'vb.present': 'presente', 'vb.command': 'imperativo', 'vb.neg': 'negativo', 'vb.subj': 'subjuntivo', 'or': 'o',
+    'conj.vosNote': s => `Por escrito, el subjuntivo con tú (${s}) es lo más seguro; la forma de vos es común al hablar.`,
+    'conj.compNote': pp => `Todos se forman con haber + <b>${pp}</b>.`,
+    'word.looking': q => `Buscando ${q}…`, 'word.none': q => `No hubo resultados para “${q}”.`,
+    'word.inUy': 'En Uruguay se dice:', 'word.syn': 'Sinónimos', 'word.ant': 'Antónimos', 'word.conj': v => `Conjugar ${v}`,
+    'roots': 'Raíces', 'roots.origin': 'Origen', 'roots.family': 'Familia', 'roots.english': 'Inglés', 'roots.ff': 'falso amigo',
+    'tag.uy': 'acá', 'tag.careful': 'ojo', 'tag.note': 'nota', 'tag.natural': 'más natural', 'tag.work': 'a practicar',
+    'lang.es': 'Español', 'lang.en': 'Inglés',
+    'tr.detect': 'Detectar', 'tr.detected': l => `Detectado: ${l}`, 'tr.other': 'el otro', 'tr.autoToast': 'Detectar idioma',
+    'tr.reading': 'Leyendo la foto…', 'tr.working': 'Traduciendo…',
+    'check.reading': 'Leyendo tu foto…', 'check.working': 'Corrigiendo…',
+    'check.readNote': n => `Esto es lo que leí, con los errores tal cual. Arreglá lo que haya leído mal${n ? ` (buscá [?], ${n} ${n > 1 ? 'lugares' : 'lugar'})` : ''} y después tocá <b>Corregir</b>. Tocá la foto para verla grande.`,
+    'check.count': n => `${n} ${n > 1 ? 'correcciones' : 'corrección'}`, 'check.none': 'Sin correcciones',
+    'check.clean': 'No hay nada que corregir.', 'check.copy': 'Copiar corregido',
+    'kind.conj': 'verbo', 'kind.verb': 'verbo', 'kind.word': 'palabra', 'kind.tr': 'traducción', 'kind.check': 'corrección',
+    'more.aiGone': 'Ese verbo de la IA ya no está guardado.',
+    'more.savedEmpty': 'Todavía no guardaste nada. Tocá la estrella en un verbo, una palabra o una traducción para guardarlo acá.',
+    'more.copyList': 'Copiar la lista como texto', 'more.histEmpty': 'Todavía no hay historial.', 'more.clearHist': 'Borrar historial',
+    'set.key': 'Clave de API', 'set.saveKey': 'Guardar clave', 'set.test': 'Probar', 'set.testing': 'Probando…', 'set.removeKey': 'Quitar',
+    'set.keyNone': 'La necesitás para Palabra, Traducir y Corregir; Conjugar funciona sin clave. Sirve una clave de Anthropic (Claude, de pago) o de Google Gemini (tiene un nivel gratis). La app reconoce cuál es.',
+    'set.keySaved': (m, p) => `Guardada en este teléfono: ${m} · ${p}.`,
+    'set.keyWhere': 'La clave queda solo en este navegador y se manda únicamente a la API de su proveedor.',
+    'set.getKeys': 'Conseguí una clave en',
+    'set.anthropicTip': 'Poné un límite de gasto mensual en la Console de Anthropic.',
+    'set.geminiTip': 'Ojo: en el nivel gratis de Gemini, Google puede usar lo que mandás para mejorar sus productos. No mandes nada privado.',
+    'set.ui': 'Idioma de la app', 'set.explain': 'Idioma de las explicaciones de la IA',
+    'set.explainHelp': 'Las definiciones de Palabra, el porqué de cada corrección y las notas de Traducir.',
+    'set.stored': 'Guardado en este teléfono',
+    'set.storedLine': (a, b, c) => `${a} guardados · ${b} en el historial · ${c} verbos conjugados por la IA`,
+    'set.forgetAI': 'Olvidar verbos de la IA', 'set.about': 'Acerca de',
+    'set.aboutText': v => `Vos ${v}. Conjugaciones de la base Spanish Verb Forms de Fred Jehle, compilada por Brian Ghidinelli, usada bajo <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Las formas de vos, el subjuntivo en -se y haber se derivan o agregan acá.`,
+    'key.pasteFirst': 'Primero pegá una clave', 'key.unknown': 'No reconozco esa clave; la guardé igual',
+    'key.saved': 'Clave guardada', 'key.removed': 'Clave quitada', 'key.works': 'La clave funciona',
+    'explain.es': 'Explicaciones en español', 'explain.en': 'Explicaciones en inglés', 'ui.set': 'App en español',
+    'prov.anthropic': 'Claude (Anthropic)', 'prov.gemini': 'Gemini (Google)',
+    'stage.hint': 'Si el texto no está derecho, giralo antes de mandarlo.', 'stage.cancel': 'Cancelar',
+    'stage.sendTr': 'Traducir foto', 'stage.sendRead': 'Leer foto',
+    'dict.unsupported': 'Este navegador no permite dictar. Usá el micrófono del teclado.',
+    'dict.perm': 'Permití el micrófono para poder dictar.', 'dict.net': 'Dictar necesita conexión.',
+    'dict.silence': 'Dejé de escuchar después de un minuto en silencio.', 'dict.fail': 'No se pudo empezar a dictar.',
+    'dict.lang': l => l === 'es' ? 'Dictado en español' : 'Dictado en inglés'
+  },
+  en: {
+    'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Check', 'tab.more': 'More',
+    'chip.person': 'By person', 'chip.vosotros': 'Vosotros', 'chip.se': '-se forms', 'chip.rare': 'Rare tenses',
+    'ph.word': 'a word, in Spanish or English', 'btn.search': 'Look up',
+    'ph.tr': 'Type or dictate in Spanish or English', 'btn.translate': 'Translate',
+    'ph.check': 'Write something, dictate it, or snap a photo.', 'btn.check': 'Check',
+    'reg.casual': 'Casual', 'reg.formal': 'Formal', 'mode.errors': 'Errors only', 'mode.push': 'Push me',
+    'more.saved': 'Saved', 'more.history': 'History', 'more.settings': 'Settings',
+    'aria.swap': 'Swap direction', 'aria.clear': 'Clear', 'aria.photo': 'Take a photo', 'aria.gallery': 'Choose a photo',
+    'aria.dictate': 'Dictate', 'aria.stopDictate': 'Stop dictating', 'aria.reg': 'Register', 'aria.strict': 'How strict',
+    'aria.section': 'Section', 'aria.save': 'Save', 'aria.unsave': 'Remove from saved', 'aria.listen': 'Listen',
+    'aria.copy': 'Copy', 'aria.remove': 'Remove', 'aria.person': 'Person', 'aria.mood': 'Mood', 'aria.rotate': 'Rotate',
+    'aria.miclang': l => `Dictation language: ${l === 'es' ? 'Spanish' : 'English'}`,
+    'alt.photo': 'Your photo',
+    'noTTS': "This device can't read aloud.",
+    'saved': 'Saved', 'unsaved': 'Removed from saved', 'copied': 'Copied', 'copyFail': "Couldn't copy",
+    'err.nokey': 'Add your API key first: More → Settings.',
+    'err.offline': "You're offline. Conjugate still works; this needs a connection.",
+    'err.net': "Couldn't reach the API. Check your connection and try again.",
+    'err.key': 'The API key was rejected. Check it in Settings.',
+    'err.rate': 'Too many requests in a row. Wait a few seconds and try again.',
+    'err.busy': 'The API is overloaded right now. Try again in a moment.',
+    'err.credit': 'Your Anthropic account is out of credit. Top up in the Console.',
+    'err.geminiQuota': "You've hit Gemini's free limit. Wait a while or try again tomorrow.",
+    'err.api': (s, d) => `API error ${s}${d ? ': ' + d : ''}`,
+    'err.unexpected': 'Got an unexpected reply. Try again.',
+    'err.unreadable': 'Got an unreadable reply. Try again.',
+    'err.truncated': 'The reply got cut off. Try a shorter text.',
+    'err.notext': "Couldn't find readable text in that photo.",
+    'err.image': "Couldn't open that image.",
+    'conj.loadFail': "Couldn't load the verbs. Open the app once while online.",
+    'conj.loading': 'Loading verbs…',
+    'conj.empty': 'Type an infinitive for all its forms, or paste any form you ran into, like <b>dijeran</b>, <b>sos</b> or <b>andate</b>, to find out what it is. Tap any form to hear it.',
+    'conj.multi': r => `${r} could be from more than one verb:`,
+    'conj.notFound': r => `“${r}” isn't one of the 638 verbs in the database.`,
+    'conj.askAI': 'Ask AI to conjugate it',
+    'conj.working': w => `Conjugating ${w}…`,
+    'conj.notVerb': w => `“${w}” doesn't look like a Spanish verb.`,
+    'conj.aiWarn': "This verb isn't in the database, so these tables are AI-generated. Double-check anything that matters.",
+    'vb.present': 'present', 'vb.command': 'command', 'vb.neg': "don't", 'vb.subj': 'subjunctive', 'or': 'or',
+    'conj.vosNote': s => `In writing, the tú subjunctive (${s}) is the safer choice; the vos form is common in speech.`,
+    'conj.compNote': pp => `All of these are haber + <b>${pp}</b>.`,
+    'word.looking': q => `Looking up ${q}…`, 'word.none': q => `Nothing came back for “${q}”.`,
+    'word.inUy': "In Uruguay you'd say:", 'word.syn': 'Synonyms', 'word.ant': 'Opposites', 'word.conj': v => `Conjugate ${v}`,
+    'roots': 'Roots', 'roots.origin': 'Origin', 'roots.family': 'Family', 'roots.english': 'English', 'roots.ff': 'false friend',
+    'tag.uy': 'Uruguay', 'tag.careful': 'careful', 'tag.note': 'note', 'tag.natural': 'sounds native', 'tag.work': 'work on',
+    'lang.es': 'Spanish', 'lang.en': 'English',
+    'tr.detect': 'Auto', 'tr.detected': l => `Detected: ${l}`, 'tr.other': 'the other one', 'tr.autoToast': 'Auto-detect',
+    'tr.reading': 'Reading the photo…', 'tr.working': 'Translating…',
+    'check.reading': 'Reading your photo…', 'check.working': 'Checking…',
+    'check.readNote': n => `This is what I read, mistakes kept on purpose. Fix anything I misread${n ? ` (look for [?], ${n} spot${n > 1 ? 's' : ''})` : ''}, then tap <b>Check</b>. Tap the photo to see it full size.`,
+    'check.count': n => `${n} fix${n > 1 ? 'es' : ''}`, 'check.none': 'No fixes',
+    'check.clean': 'Nothing to fix.', 'check.copy': 'Copy corrected',
+    'kind.conj': 'verb', 'kind.verb': 'verb', 'kind.word': 'word', 'kind.tr': 'translation', 'kind.check': 'check',
+    'more.aiGone': 'That AI verb is no longer cached.',
+    'more.savedEmpty': 'Nothing saved yet. Tap the star on a verb, word or translation to keep it here.',
+    'more.copyList': 'Copy list as text', 'more.histEmpty': 'No history yet.', 'more.clearHist': 'Clear history',
+    'set.key': 'API key', 'set.saveKey': 'Save key', 'set.test': 'Test', 'set.testing': 'Testing…', 'set.removeKey': 'Remove',
+    'set.keyNone': 'Needed for Word, Translate and Check; Conjugate works without it. Use an Anthropic key (Claude, paid) or a Google Gemini key (has a free tier). The app works out which one it is.',
+    'set.keySaved': (m, p) => `Saved on this phone: ${m} · ${p}.`,
+    'set.keyWhere': 'The key stays in this browser only and is sent nowhere except its provider’s API.',
+    'set.getKeys': 'Get a key at',
+    'set.anthropicTip': 'Set a monthly spend limit in the Anthropic Console.',
+    'set.geminiTip': "Heads up: on Gemini's free tier, Google may use what you send to improve its products. Don't send anything private.",
+    'set.ui': 'App language', 'set.explain': 'AI explanation language',
+    'set.explainHelp': 'Word definitions, the why behind each correction, and Translate notes.',
+    'set.stored': 'Stored on this phone',
+    'set.storedLine': (a, b, c) => `${a} saved · ${b} in history · ${c} AI-conjugated verbs`,
+    'set.forgetAI': 'Forget AI verbs', 'set.about': 'About',
+    'set.aboutText': v => `Vos ${v}. Conjugations from the Spanish Verb Forms database by Fred Jehle, compiled by Brian Ghidinelli, used under <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Vos forms, the -se subjunctive and haber are derived or added here.`,
+    'key.pasteFirst': 'Paste a key first', 'key.unknown': "That doesn't look like an Anthropic or Google key; saved anyway",
+    'key.saved': 'Key saved', 'key.removed': 'Key removed', 'key.works': 'Key works',
+    'explain.es': 'Explanations in Spanish', 'explain.en': 'Explanations in English', 'ui.set': 'App in English',
+    'prov.anthropic': 'Claude (Anthropic)', 'prov.gemini': 'Gemini (Google)',
+    'stage.hint': "If the text isn't upright, rotate it before sending.", 'stage.cancel': 'Cancel',
+    'stage.sendTr': 'Translate photo', 'stage.sendRead': 'Read photo',
+    'dict.unsupported': "This browser can't take dictation. Use your keyboard's mic instead.",
+    'dict.perm': 'Allow the microphone to dictate.', 'dict.net': 'Dictation needs a connection.',
+    'dict.silence': 'Stopped listening after a minute of silence.', 'dict.fail': "Couldn't start dictation.",
+    'dict.lang': l => l === 'es' ? 'Dictating in Spanish' : 'Dictating in English'
+  }
+};
+function t(k, ...a) {
+  const v = (I18N[S.ui] || I18N.es)[k] ?? I18N.es[k] ?? k;
+  return typeof v === 'function' ? v(...a) : v;
+}
+function applyI18n() {
+  document.documentElement.lang = S.ui === 'en' ? 'en' : 'es-UY';
+  $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
+  $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
+  $$('[data-i18n-alt]').forEach(el => { el.alt = t(el.dataset.i18nAlt); });
+}
+
 
 /* ---------------- toast ---------------- */
 let toastT;
@@ -65,7 +248,7 @@ if ('speechSynthesis' in window) {
   speechSynthesis.onvoiceschanged = pickVoice;
 }
 function say(text) {
-  if (!('speechSynthesis' in window)) return toast('Este dispositivo no puede leer en voz alta.');
+  if (!('speechSynthesis' in window)) return toast(t('noTTS'));
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(String(text).replace(/^no\s+/, 'no '));
   u.lang = esVoice ? esVoice.lang : 'es-UY';
@@ -87,10 +270,10 @@ function isSaved(id) { return SAVED.some(s => s.id === id); }
 function toggleSave(item) {
   if (isSaved(item.id)) {
     SAVED = SAVED.filter(s => s.id !== item.id);
-    toast('Quitado de guardados');
+    toast(t('unsaved'));
   } else {
     SAVED.unshift(Object.assign({ ts: Date.now() }, item));
-    toast('Guardado');
+    toast(t('saved'));
   }
   store.set('vos.saved', SAVED);
   return isSaved(item.id);
@@ -109,17 +292,17 @@ function starBtn(item) {
   const on = isSaved(item.id);
   const b = document.createElement('button');
   b.className = 'icon' + (on ? ' on' : '');
-  b.setAttribute('aria-label', on ? 'Quitar de guardados' : 'Guardar');
+  b.setAttribute('aria-label', on ? t('aria.unsave') : t('aria.save'));
   b.innerHTML = STAR;
   b.onclick = () => {
     const now = toggleSave(item);
     b.classList.toggle('on', now);
-    b.setAttribute('aria-label', now ? 'Quitar de guardados' : 'Guardar');
+    b.setAttribute('aria-label', now ? t('aria.unsave') : t('aria.save'));
   };
   return b;
 }
 function sayBtn(text) {
-  return `<button class="icon" data-say="${esc(text)}" aria-label="Escuchar">${SPEAKER}</button>`;
+  return `<button class="icon" data-say="${esc(text)}" aria-label="${t('aria.listen')}">${SPEAKER}</button>`;
 }
 
 /* ---------------- navigation ---------------- */
@@ -157,9 +340,16 @@ const UY = `Target variety: Uruguayan Spanish as used in Montevideo today. Not p
 - In casual text, Uruguayans often mix tú with voseo verbs ("tú sabés"). That is real usage here; do not treat it as an error in casual register.`;
 const EXPL = () => S.explain === 'en' ? 'English' : 'Spanish (natural Uruguayan Spanish, voseo where it fits)';
 
-async function ask({ system, content, maxTokens = 1200, model }) {
-  if (!S.key) throw new Error('Primero agregá tu clave de API de Anthropic: Más → Ajustes.');
-  if (!navigator.onLine) throw new Error('Estás sin conexión. Conjugar funciona igual; esto necesita internet.');
+async function ask({ system, content, maxTokens = 1200, photo = false }) {
+  if (!S.key) throw new Error(t('err.nokey'));
+  if (!navigator.onLine) throw new Error(t('err.offline'));
+  const text = providerOf(S.key) === 'gemini'
+    ? await askGemini(system, content, maxTokens, true)
+    : await askClaude(system, content, maxTokens, photo ? CLAUDE_PHOTO : CLAUDE_TEXT);
+  return parseJSON(text);
+}
+
+async function askClaude(system, content, maxTokens, model) {
   let r;
   try {
     r = await fetch('https://api.anthropic.com/v1/messages', {
@@ -170,32 +360,65 @@ async function ask({ system, content, maxTokens = 1200, model }) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true'
       },
-      body: JSON.stringify({
-        model: model || S.model, max_tokens: maxTokens, system,
-        messages: [{ role: 'user', content }]
-      })
+      body: JSON.stringify({ model, max_tokens: maxTokens, system, messages: [{ role: 'user', content }] })
     });
-  } catch {
-    throw new Error('No se pudo conectar con la API. Revisá la conexión y probá de nuevo.');
-  }
+  } catch { throw new Error(t('err.net')); }
   if (!r.ok) {
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
-    if (r.status === 401) throw new Error('La clave de API fue rechazada. Revisala en Ajustes.');
-    if (r.status === 429) throw new Error('Demasiadas consultas seguidas. Esperá unos segundos y probá de nuevo.');
-    if (r.status === 529 || r.status === 503) throw new Error('La API está saturada. Probá de nuevo en un rato.');
-    if (r.status === 400 && /credit/i.test(detail)) throw new Error('Tu cuenta de Anthropic se quedó sin crédito. Cargá saldo en la Console.');
-    throw new Error(`Error de la API ${r.status}${detail ? ': ' + detail : ''}`);
+    if (r.status === 401) throw new Error(t('err.key'));
+    if (r.status === 429) throw new Error(t('err.rate'));
+    if (r.status === 529 || r.status === 503) throw new Error(t('err.busy'));
+    if (r.status === 400 && /credit/i.test(detail)) throw new Error(t('err.credit'));
+    throw new Error(t('err.api', r.status, detail));
   }
   const d = await r.json();
-  const text = (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
-  return parseJSON(text);
+  return (d.content || []).filter(c => c.type === 'text').map(c => c.text).join('');
+}
+
+function geminiParts(content) {
+  if (typeof content === 'string') return [{ text: content }];
+  return content.map(b => b.type === 'image'
+    ? { inlineData: { mimeType: b.source.media_type, data: b.source.data } }
+    : { text: b.text });
+}
+async function askGemini(system, content, maxTokens, lowThinking) {
+  const generationConfig = { maxOutputTokens: Math.max(8192, maxTokens * 4), responseMimeType: 'application/json' };
+  if (lowThinking) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
+  let r;
+  try {
+    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': S.key },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: 'user', parts: geminiParts(content) }],
+        generationConfig
+      })
+    });
+  } catch { throw new Error(t('err.net')); }
+  if (!r.ok) {
+    let detail = '';
+    try { detail = (await r.json()).error?.message || ''; } catch {}
+    // Older or newer models may not accept the thinking setting; retry once without it.
+    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false);
+    if (r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(detail))) throw new Error(t('err.key'));
+    if (r.status === 429) throw new Error(t('err.geminiQuota'));
+    if (r.status === 500 || r.status === 503) throw new Error(t('err.busy'));
+    throw new Error(t('err.api', r.status, detail));
+  }
+  const d = await r.json();
+  const c = d.candidates && d.candidates[0];
+  const text = ((c && c.content && c.content.parts) || []).filter(p => p.text && !p.thought).map(p => p.text).join('');
+  if (!text && c && c.finishReason === 'MAX_TOKENS') throw new Error(t('err.truncated'));
+  if (!text) throw new Error(t('err.unexpected'));
+  return text;
 }
 function parseJSON(text) {
   const a = text.indexOf('{'), b = text.lastIndexOf('}');
-  if (a < 0 || b < a) throw new Error('Llegó una respuesta inesperada. Probá de nuevo.');
+  if (a < 0 || b < a) throw new Error(t('err.unexpected'));
   try { return JSON.parse(text.slice(a, b + 1)); }
-  catch { throw new Error('Llegó una respuesta ilegible. Probá de nuevo.'); }
+  catch { throw new Error(t('err.unreadable')); }
 }
 function loading(el, msg) { el.innerHTML = `<p class="msg"><span class="spinner"></span>${esc(msg)}</p>`; }
 function failed(el, e) { el.innerHTML = `<p class="msg err">${esc(e.message || e)}</p>`; }
@@ -245,7 +468,7 @@ async function loadVerbs() {
     buildRev();
     runConj();
   } catch {
-    $('#conj-out').innerHTML = `<p class="msg err">No se pudieron cargar los verbos. Abrí la app una vez con conexión.</p>`;
+    $('#conj-out').innerHTML = `<p class="msg err">${t('conj.loadFail')}</p>`;
   }
 }
 
@@ -287,10 +510,14 @@ function moodOf(t) {
   return '';
 }
 function describeHit(h) {
-  const [es] = tenseName(h.tense);
+  const [es, en] = tenseName(h.tense);
   const m = COMPOUND[h.tense] ? '' : moodOf(h.tense);
   const WHO = ['yo', 'tú', 'él/usted', 'nosotros', 'vosotros', 'ellos/ustedes'];
   const who = h.i === 'vos' ? 'vos' : (h.i >= 0 ? WHO[h.i] : '');
+  if (S.ui === 'en') {
+    const me = { indicativo: 'indicative', subjuntivo: 'subjunctive', imperativo: 'imperative' }[m] || '';
+    return `${en.toLowerCase()}${me ? ' ' + me : ''}${who ? ', ' + who : ''}, of ${h.inf}`;
+  }
   return `${es.toLowerCase()}${m ? ' de ' + m : ''}${who ? ', ' + who : ''}, de ${h.inf}`;
 }
 
@@ -376,8 +603,8 @@ function renderPersonView(v, force) {
   const chips = PKEYS.filter(p => p.k !== 'vosotros' || S.vosotros).map(p =>
     `<button class="pchip" data-p="${p.k}" aria-pressed="${p.k === S.person}">${esc(p.label)}</button>`).join('');
   const line = (label, f, alt) => `<div class="pline${isHit(f) || isHit(alt) ? ' hit' : ''}" data-say="${esc(f)}">
-      <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">o ${esc(alt)}</span>` : ''}</span></div>`;
-  let html = `<div class="pchips" role="group" aria-label="Persona">${chips}</div>`;
+      <span class="t">${esc(label)}</span><span class="f">${esc(f)}${alt ? `<span class="alt">${t('or')} ${esc(alt)}</span>` : ''}</span></div>`;
+  let html = `<div class="pchips" role="group" aria-label="${t('aria.person')}">${chips}</div>`;
   for (const [mk, m] of Object.entries(MOODS)) {
     let rows = '';
     if (mk === 'imp') {
@@ -402,8 +629,8 @@ function renderTableView(v, force) {
     `<button data-v="${k}">${m.label}</button>`).join('');
   const m = MOODS[S.mood] || MOODS.ind;
   let body = m.tenses.filter(t => tenseVisible(t, force)).map(t => tenseTable(v, t)).join('');
-  if (S.mood === 'comp' && v.pp) body = `<p class="vosnote" style="margin:12px 0 0">Todos se forman con haber + <b>${esc(v.pp)}</b>.</p>` + body;
-  return `<div class="seg full moodtabs" id="mood-seg" role="radiogroup" aria-label="Modo">${tabs}</div>${body}`;
+  if (S.mood === 'comp' && v.pp) body = `<p class="vosnote" style="margin:12px 0 0">${t('conj.compNote', esc(v.pp))}</p>` + body;
+  return `<div class="seg full moodtabs" id="mood-seg" role="radiogroup" aria-label="${t('aria.mood')}">${tabs}</div>${body}`;
 }
 
 let current = null;   // { inf, ai, note, force }
@@ -427,24 +654,24 @@ function renderVerb(inf, { note = '', ai = false, hit = null } = {}) {
   const tuNeg = v.t.imp_neg && v.t.imp_neg[1];
   const vosNeg = vp.sub_pres ? 'no ' + vp.sub_pres : null;
   const cell = (label, f, alt) => f
-    ? `<span class="k">${label}</span><span class="v speakable" data-say="${esc(f)}">${esc(f)}${alt && alt !== f ? `<span class="alt">o ${esc(alt)}</span>` : ''}</span>`
+    ? `<span class="k">${label}</span><span class="v speakable" data-say="${esc(f)}">${esc(f)}${alt && alt !== f ? `<span class="alt">${t('or')} ${esc(alt)}</span>` : ''}</span>`
     : '';
 
   out.innerHTML = `
     ${note ? `<p class="found">${esc(note)}</p>` : ''}
-    ${ai ? `<div class="aiwarn">Este verbo no está en la base, así que las tablas las generó la IA. Verificá lo que sea importante.</div>` : ''}
+    ${ai ? `<div class="aiwarn">${t('conj.aiWarn')}</div>` : ''}
     <div class="lemma-head">
       <div style="flex:1"><div class="lemma">${esc(inf)}</div><div class="gloss">${esc(v.en || '')}</div></div>
       ${sayBtn(inf)}<span id="conj-star"></span>
     </div>
     ${v.ger || v.pp ? `<p class="parts">gerundio <b class="speakable" data-say="${esc(v.ger)}">${esc(v.ger)}</b> &nbsp; participio <b class="speakable" data-say="${esc(v.pp)}">${esc(v.pp)}</b></p>` : ''}
     ${S.byPerson ? '' : `<div class="vosbox">
-      ${cell('presente', vp.ind_pres)}
-      ${cell('imperativo', vp.imp_aff)}
-      ${cell('negativo', vosNeg, tuNeg)}
-      ${cell('subjuntivo', vp.sub_pres, tuSub)}
+      ${cell(t('vb.present'), vp.ind_pres)}
+      ${cell(t('vb.command'), vp.imp_aff)}
+      ${cell(t('vb.neg'), vosNeg, tuNeg)}
+      ${cell(t('vb.subj'), vp.sub_pres, tuSub)}
     </div>
-    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">Por escrito, el subjuntivo con tú (${esc(tuSub)}) es lo más seguro; la forma de vos es común al hablar.</p>` : ''}`}
+    ${vp.sub_pres && tuSub && vp.sub_pres !== tuSub ? `<p class="vosnote">${t('conj.vosNote', esc(tuSub))}</p>` : ''}`}
     <div id="conj-body">${S.byPerson ? renderPersonView(v, force) : renderTableView(v, force)}</div>
   `;
   $('#conj-star').replaceWith(starBtn({ id: 'verb:' + inf, type: 'verb', key: inf, label: inf, sub: v.en || '', ai }));
@@ -472,10 +699,10 @@ function runConj() {
   const raw = $('#conj-q').value.trim();
   const out = $('#conj-out');
   current = null;
-  if (!DATA) { loading(out, 'Cargando verbos…'); return; }
+  if (!DATA) { loading(out, t('conj.loading')); return; }
   if (!raw) {
     lastQ = '';
-    out.innerHTML = `<div class="empty">Escribí un infinitivo para ver todas sus formas, o pegá cualquier forma que te encontraste, como <b>dijeran</b>, <b>sos</b> o <b>andate</b>, para saber qué es. Tocá una forma para escucharla.</div>`;
+    out.innerHTML = `<div class="empty">${t('conj.empty')}</div>`;
     return;
   }
   const q = fold(raw);
@@ -488,7 +715,7 @@ function runConj() {
   const hits = REV.get(q) || [];
   if (hits.length === 1) return renderVerb(hits[0].inf, { note: `${raw}: ${describeHit(hits[0])}`, hit: hits[0] });
   if (hits.length > 1) {
-    out.innerHTML = `<p class="found">${esc(raw)} puede ser de más de un verbo:</p>` +
+    out.innerHTML = `<p class="found">${t('conj.multi', esc(raw))}</p>` +
       hits.map((h, i) => `<button class="pick" data-h="${i}"><b>${esc(h.inf)}</b><span>${esc(describeHit(h))} · ${esc(DATA.verbs[h.inf].en)}</span></button>`).join('');
     $$('.pick', out).forEach(b => b.onclick = () => {
       const h = hits[+b.dataset.h];
@@ -496,8 +723,8 @@ function runConj() {
     });
     return;
   }
-  out.innerHTML = `<div class="empty">“${esc(raw)}” no está entre los 638 verbos de la base.
-    ${looksLikeVerb(raw) ? `<div class="row"><button class="ghost" id="ai-conj">Pedirle a la IA que lo conjugue</button></div>` : ''}</div>`;
+  out.innerHTML = `<div class="empty">${t('conj.notFound', esc(raw))}
+    ${looksLikeVerb(raw) ? `<div class="row"><button class="ghost" id="ai-conj">${t('conj.askAI')}</button></div>` : ''}</div>`;
   const b = $('#ai-conj');
   if (b) b.onclick = () => aiConjugate(raw);
 }
@@ -515,10 +742,10 @@ vos.sub_pres uses the Rioplatense stress (podás, not puedás).`;
 
 async function aiConjugate(word) {
   const out = $('#conj-out');
-  loading(out, `Conjugando ${word}…`);
+  loading(out, t('conj.working', word));
   try {
     const d = await ask({ system: CONJ_SYS, content: word, maxTokens: 2000 });
-    if (d.error || !d.infinitive || !d.t) throw new Error(`“${word}” no parece un verbo en español.`);
+    if (d.error || !d.infinitive || !d.t) throw new Error(t('conj.notVerb', word));
     AIVERBS[d.infinitive] = { en: d.en, ger: d.ger, pp: d.pp, t: d.t, vos: d.vos || {}, g: {} };
     store.set('vos.aiverbs', AIVERBS);
     renderVerb(d.infinitive, { ai: true });
@@ -551,9 +778,9 @@ Reply with JSON only, no prose, no code fences:
 {"query_lang":"es"|"en","entries":[{
   "word":str,
   "gender":"el"|"la"|"el/la"|null,
-  "pos":str (in Spanish: "sustantivo", "verbo", "adjetivo", "adverbio", "expresión"),
+  "pos":str (part of speech),
   "verb_infinitive":str|null (the infinitive if this entry is a verb),
-  "senses":[{"def":str (English, short),"example":str (natural Uruguayan Spanish sentence),"example_en":str}],
+  "senses":[{"def":str (short),"example":str (natural Uruguayan Spanish sentence),"example_en":str|null}],
   "synonyms":[str],
   "antonyms":[str],
   "uruguay":str|null,
@@ -573,20 +800,22 @@ synonyms/antonyms: up to 6 each, words actually used in Uruguay. Empty arrays if
 uruguay: one sentence only if usage in Uruguay differs from general Spanish (different word preferred, different meaning, regional connotation). Otherwise null.
 careful: one sentence only for a real false friend, vulgar/sexual double meaning in the Río de la Plata, or register trap. Otherwise null.
 roots: help the learner decode and remember the word.
-- parts: split into prefix / root / suffix with a short English meaning for each (des- "undo", cubrir "to cover", -miento "the act of"). Only real, standard morphology. A simple word with no useful split gets a single part.
-- literal: what the parts add up to, in a few English words, only if it adds something; else null.
+- parts: split into prefix / root / suffix with a short meaning for each (des- "undo", cubrir "to cover", -miento "the act of"). Only real, standard morphology. A simple word with no useful split gets a single part.
+- literal: what the parts add up to, in a few words, only if it adds something; else null.
 - origin: ONE short line (e.g. "Latin cooperire, to cover completely"; "Arabic al-mujadda, cushion"). Only when the origin is clear and well established. If you are not sure, use null. Never invent an etymology.
-- family: 3 to 6 common related Spanish words sharing the root, each with a short English meaning. Empty array if none.
+- family: 3 to 6 common related Spanish words sharing the root, each with a short meaning. Empty array if none.
 - english: an English word sharing the root when it helps memory ("cover, discover"), else null. false_friend true if the resemblance is misleading.
 Use null for roots only for interjections, slang like "ta", or proper nouns.
-Language: def, example_en and every meaning inside roots are in English. The "uruguay" and "careful" notes are written in ${EXPL()}.`; }
+${S.explain === 'en'
+  ? 'Language: write pos, def, example_en, literal, every meaning inside roots, and the "uruguay" and "careful" notes in English. pos uses English terms (noun, verb, adjective, adverb, expression).'
+  : 'Language: write pos, def, literal, every meaning inside roots, and the "uruguay" and "careful" notes in clear, natural Spanish that a C1 learner can follow, like a good monolingual dictionary (Uruguayan usage, voseo where it fits). pos uses Spanish terms (sustantivo, verbo, adjetivo, adverbio, expresión). Set example_en to null. roots.english still names English words, since that line is about English cognates.'}`; }
 
 async function runWord(q, cached) {
   const out = $('#word-out');
   if (!q) return;
   $('#word-q').value = q;
   if (cached) return renderWord(q, cached);
-  loading(out, `Buscando ${q}…`);
+  loading(out, t('word.looking', q));
   $('#word-form button').disabled = true;
   try {
     const d = await ask({ system: wordSystem(), content: q, maxTokens: 2200 });
@@ -604,19 +833,19 @@ function summarizeWord(d) {
 function rootsHTML(r) {
   if (!r || !((r.parts && r.parts.length) || (r.family && r.family.length) || r.origin)) return '';
   const parts = (r.parts || []).filter(p => p && p.part);
-  return `<details class="roots"><summary>Raíces</summary>
+  return `<details class="roots"><summary>${t('roots')}</summary>
     ${parts.length ? `<p class="rparts">${parts.map(p => `<b>${esc(p.part)}</b> <span>${esc(p.meaning || '')}</span>`).join('<i>+</i>')}</p>` : ''}
     ${r.literal ? `<p class="rlit">→ ${esc(r.literal)}</p>` : ''}
-    ${r.origin ? `<p class="rline"><span class="rk">Origen</span>${esc(r.origin)}</p>` : ''}
-    ${r.family && r.family.length ? `<p class="rline"><span class="rk">Familia</span>${r.family.map(f => `<b>${esc(f.word)}</b> <span class="rm">${esc(f.meaning || '')}</span>`).join('<span class="rm"> · </span>')}</p>` : ''}
-    ${r.english ? `<p class="rline"><span class="rk">Inglés</span>${esc(r.english)}${r.false_friend ? ' <span class="tag warn">falso amigo</span>' : ''}</p>` : ''}
+    ${r.origin ? `<p class="rline"><span class="rk">${t('roots.origin')}</span>${esc(r.origin)}</p>` : ''}
+    ${r.family && r.family.length ? `<p class="rline"><span class="rk">${t('roots.family')}</span>${r.family.map(f => `<b>${esc(f.word)}</b> <span class="rm">${esc(f.meaning || '')}</span>`).join('<span class="rm"> · </span>')}</p>` : ''}
+    ${r.english ? `<p class="rline"><span class="rk">${t('roots.english')}</span>${esc(r.english)}${r.false_friend ? ` <span class="tag warn">${t('roots.ff')}</span>` : ''}</p>` : ''}
   </details>`;
 }
 function renderWord(q, d) {
   const out = $('#word-out');
   const entries = d.entries || [];
-  if (!entries.length) { out.innerHTML = `<p class="msg">No hubo resultados para “${esc(q)}”.</p>`; return; }
-  out.innerHTML = (d.query_lang === 'en' ? `<p class="found">En Uruguay se dice:</p>` : '') +
+  if (!entries.length) { out.innerHTML = `<p class="msg">${t('word.none', esc(q))}</p>`; return; }
+  out.innerHTML = (d.query_lang === 'en' ? `<p class="found">${t('word.inUy')}</p>` : '') +
     entries.map((e, i) => {
       const head = (e.gender && e.gender !== 'el/la' ? e.gender + ' ' : '') + e.word;
       const verb = e.verb_infinitive && (DATA?.verbs[e.verb_infinitive] || AIVERBS[e.verb_infinitive]) ? e.verb_infinitive : (e.verb_infinitive || null);
@@ -624,12 +853,12 @@ function renderWord(q, d) {
         <div class="head"><h3>${esc(head)}</h3>${sayBtn(e.word)}<span data-star="${i}"></span></div>
         <div class="pos">${esc(e.pos || '')}${e.gender === 'el/la' ? ' · el/la' : ''}</div>
         <ol>${(e.senses || []).map(s => `<li>${esc(s.def)}${s.example ? `<span class="ex speakable" data-say="${esc(s.example)}">${esc(s.example)}</span>` : ''}${s.example_en ? `<span class="ex" style="font-family:var(--sans);font-size:13px">${esc(s.example_en)}</span>` : ''}</li>`).join('')}</ol>
-        ${e.synonyms && e.synonyms.length ? `<p class="syn">Sinónimos: ${e.synonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
-        ${e.antonyms && e.antonyms.length ? `<p class="syn">Antónimos: ${e.antonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
-        ${e.uruguay ? `<div class="flag"><span class="tag">acá</span><span>${esc(e.uruguay)}</span></div>` : ''}
-        ${e.careful ? `<div class="flag"><span class="tag warn">ojo</span><span>${esc(e.careful)}</span></div>` : ''}
+        ${e.synonyms && e.synonyms.length ? `<p class="syn">${t('word.syn')}: ${e.synonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
+        ${e.antonyms && e.antonyms.length ? `<p class="syn">${t('word.ant')}: ${e.antonyms.map(w => `<b>${esc(w)}</b>`).join(', ')}</p>` : ''}
+        ${e.uruguay ? `<div class="flag"><span class="tag">${t('tag.uy')}</span><span>${esc(e.uruguay)}</span></div>` : ''}
+        ${e.careful ? `<div class="flag"><span class="tag warn">${t('tag.careful')}</span><span>${esc(e.careful)}</span></div>` : ''}
         ${rootsHTML(e.roots)}
-        ${verb ? `<div class="row"><button class="ghost" data-conj="${esc(verb)}">Conjugar ${esc(verb)}</button></div>` : ''}
+        ${verb ? `<div class="row"><button class="ghost" data-conj="${esc(verb)}">${t('word.conj', esc(verb))}</button></div>` : ''}
       </div>`;
     }).join('');
   entries.forEach((e, i) => {
@@ -649,16 +878,16 @@ $('#word-form').addEventListener('submit', e => {
    ============================================================ */
 let trDir = 'auto';          // 'auto' | 'es-en' | 'en-es'
 let trLast = null;           // last detected source lang
-const LANG = { es: 'Español', en: 'Inglés' };
+const langName = c => t('lang.' + c);
 
 function paintDir() {
   if (trDir === 'auto') {
-    $('#tr-from').textContent = trLast ? `Detectado: ${LANG[trLast]}` : 'Detectar';
-    $('#tr-to').textContent = trLast ? LANG[trLast === 'es' ? 'en' : 'es'] : 'el otro';
+    $('#tr-from').textContent = trLast ? t('tr.detected', langName(trLast)) : t('tr.detect');
+    $('#tr-to').textContent = trLast ? langName(trLast === 'es' ? 'en' : 'es') : t('tr.other');
   } else {
     const [a, b] = trDir.split('-');
-    $('#tr-from').textContent = LANG[a];
-    $('#tr-to').textContent = LANG[b];
+    $('#tr-from').textContent = langName(a);
+    $('#tr-to').textContent = langName(b);
   }
 }
 $('#tr-swap').onclick = () => {
@@ -666,7 +895,7 @@ $('#tr-swap').onclick = () => {
   else if (trDir === 'es-en') trDir = 'en-es';
   else trDir = 'auto';
   paintDir();
-  toast(trDir === 'auto' ? 'Detectar idioma' : `${$('#tr-from').textContent} → ${$('#tr-to').textContent}`);
+  toast(trDir === 'auto' ? t('tr.autoToast') : `${$('#tr-from').textContent} → ${$('#tr-to').textContent}`);
 };
 seg($('#tr-reg'), S.trReg, v => { S.trReg = v; saveSettings(); });
 
@@ -694,15 +923,15 @@ If a photo has no readable text, reply {"error":"no text"}.`;
 async function runTranslate({ text, image }) {
   const out = $('#tr-out');
   const go = $('#tr-go');
-  loading(out, image ? 'Leyendo la foto…' : 'Traduciendo…');
+  loading(out, image ? t('tr.reading') : t('tr.working'));
   go.disabled = true;
   try {
     const content = image
       ? [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: image } },
          { type: 'text', text: 'Read the text in this photo and translate it.' }]
       : text;
-    const d = await ask({ system: trSystem(), content, maxTokens: 2000, model: image ? S.readModel : undefined });
-    if (d.error) throw new Error(image ? 'No encontré texto legible en esa foto.' : d.error);
+    const d = await ask({ system: trSystem(), content, maxTokens: 2000, photo: !!image });
+    if (d.error) throw new Error(image ? t('err.notext') : d.error);
     trLast = d.source_lang === 'en' ? 'en' : 'es';
     paintDir();
     renderTranslation(d, image);
@@ -715,17 +944,17 @@ function renderTranslation(d, image) {
   const toEs = d.source_lang === 'en';
   const spanish = toEs ? d.translation : d.source_text;
   out.innerHTML = `<div class="card">
-    ${image ? `<img class="thumb zoomable" src="data:image/jpeg;base64,${image}" alt="Tu foto">` : ''}
+    ${image ? `<img class="thumb zoomable" src="data:image/jpeg;base64,${image}" alt="${t('alt.photo')}">` : ''}
     ${image || d.source_text ? `<p class="tr-src">${esc(d.source_text || '')}</p>` : ''}
     <div class="head"><p class="tr-main" style="flex:1">${esc(d.translation)}</p>
-      <button class="icon" id="tr-copy" aria-label="Copiar">${COPY}</button>
+      <button class="icon" id="tr-copy" aria-label="${t('aria.copy')}">${COPY}</button>
       ${sayBtn(spanish)}<span id="tr-star"></span></div>
     ${(d.alternatives || []).map(a => `<div class="alt-item"><div class="t ${toEs ? 'speakable' : ''}" ${toEs ? `data-say="${esc(a.text)}"` : ''}>${esc(a.text)}</div><div class="n">${esc(a.note || '')}</div></div>`).join('')}
-    ${d.note ? `<div class="flag"><span class="tag">nota</span><span>${esc(d.note)}</span></div>` : ''}
+    ${d.note ? `<div class="flag"><span class="tag">${t('tag.note')}</span><span>${esc(d.note)}</span></div>` : ''}
   </div>`;
   $('#tr-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(d.translation); toast('Copiado'); }
-    catch { toast('No se pudo copiar'); }
+    try { await navigator.clipboard.writeText(d.translation); toast(t('copied')); }
+    catch { toast(t('copyFail')); }
   };
   $('#tr-star').replaceWith(starBtn({
     id: 'tr:' + fold(d.source_text || '').slice(0, 120), type: 'tr',
@@ -790,20 +1019,20 @@ If there is no readable text, reply {"error":"no text"}.`;
 async function readForCheck(b64) {
   const box = $('#check-read');
   $('#check-out').innerHTML = '';
-  loading(box, 'Leyendo tu foto…');
+  loading(box, t('check.reading'));
   try {
     const d = await ask({
-      system: READ_SYS, maxTokens: 2500, model: S.readModel,
+      system: READ_SYS, maxTokens: 2500, photo: true,
       content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
                 { type: 'text', text: 'Transcribe this exactly, errors and all.' }]
     });
-    if (d.error || !d.text) throw new Error('No encontré texto legible en esa foto.');
+    if (d.error || !d.text) throw new Error(t('err.notext'));
     $('#check-q').value = d.text;
     checkDictated = false;
     paintClear('check');
     box.innerHTML = `<div class="readnote">
-      <img class="thumb small zoomable" src="data:image/jpeg;base64,${b64}" alt="Tu foto">
-      <p>Esto es lo que leí, con los errores tal cual. Arreglá lo que haya leído mal${d.unsure ? ` (buscá [?], ${d.unsure} ${d.unsure > 1 ? 'lugares' : 'lugar'})` : ''} y después tocá <b>Corregir</b>. Tocá la foto para verla grande.</p>
+      <img class="thumb small zoomable" src="data:image/jpeg;base64,${b64}" alt="${t('alt.photo')}">
+      <p>${t('check.readNote', d.unsure || 0)}</p>
     </div>`;
     $('#check-q').scrollIntoView({ block: 'start', behavior: 'smooth' });
   } catch (e) { failed(box, e); }
@@ -812,12 +1041,12 @@ async function readForCheck(b64) {
 async function runCheck(text, cached) {
   const out = $('#check-out');
   if (cached) return renderCheck(text, cached);
-  loading(out, 'Corrigiendo…');
+  loading(out, t('check.working'));
   $('#check-go').disabled = true;
   try {
     const d = await ask({ system: checkSystem(), content: text, maxTokens: 2500 });
     renderCheck(text, d);
-    addHistory({ id: 'check:' + Date.now(), type: 'check', key: text, label: text.slice(0, 80), sub: d.changes?.length ? `${d.changes.length} ${d.changes.length > 1 ? 'correcciones' : 'corrección'}` : 'Sin correcciones', data: d });
+    addHistory({ id: 'check:' + Date.now(), type: 'check', key: text, label: text.slice(0, 80), sub: d.changes?.length ? t('check.count', d.changes.length) : t('check.none'), data: d });
   } catch (e) { failed(out, e); }
   $('#check-go').disabled = false;
 }
@@ -826,21 +1055,21 @@ function renderCheck(text, d) {
   const changes = d.changes || [];
   const clean = !changes.length;
   out.innerHTML = `<div class="card">
-    ${clean ? `<p class="found" style="margin:0 0 10px">No hay nada que corregir.</p>` : ''}
+    ${clean ? `<p class="found" style="margin:0 0 10px">${t('check.clean')}</p>` : ''}
     <div class="diff">${diffHTML(text, d.corrected || text)}</div>
     <div class="row" style="margin:0 0 4px">
-      <button class="ghost" id="ck-copy">Copiar corregido</button>
+      <button class="ghost" id="ck-copy">${t('check.copy')}</button>
       ${sayBtn(d.corrected || text).replace('class="icon"', 'class="icon" style="margin-left:auto"')}
     </div>
     ${changes.map(c => `<div class="fix ${c.kind === 'style' ? 'style' : ''}">
       <div class="ft"><del>${esc(c.from)}</del><ins>${esc(c.to)}</ins></div>
-      <div class="why">${c.kind === 'style' ? '<span class="tag sol" style="margin-right:6px">más natural</span>' : ''}${esc(c.why)}</div>
+      <div class="why">${c.kind === 'style' ? `<span class="tag sol" style="margin-right:6px">${t('tag.natural')}</span>` : ''}${esc(c.why)}</div>
     </div>`).join('')}
-    ${d.pattern ? `<div class="flag"><span class="tag">a practicar</span><span>${esc(d.pattern)}</span></div>` : ''}
+    ${d.pattern ? `<div class="flag"><span class="tag">${t('tag.work')}</span><span>${esc(d.pattern)}</span></div>` : ''}
   </div>`;
   $('#ck-copy').onclick = async () => {
-    try { await navigator.clipboard.writeText(d.corrected || text); toast('Copiado'); }
-    catch { toast('No se pudo copiar'); }
+    try { await navigator.clipboard.writeText(d.corrected || text); toast(t('copied')); }
+    catch { toast(t('copyFail')); }
   };
 }
 $('#check-go').onclick = () => {
@@ -892,11 +1121,11 @@ function diffHTML(a, b) {
 /* ============================================================
    MORE: saved · history · settings
    ============================================================ */
-const KIND = { conj: 'verbo', verb: 'verbo', word: 'palabra', tr: 'traducción', check: 'corrección' };
+
 
 function reopen(item) {
   if (item.type === 'conj' || item.type === 'verb') {
-    if (item.ai && !AIVERBS[item.key]) return toast('Ese verbo de la IA ya no está guardado.');
+    if (item.ai && !AIVERBS[item.key]) return toast(t('more.aiGone'));
     return openVerb(item.key);
   }
   if (item.type === 'word') { go('word', { focus: false }); return runWord(item.key, item.data); }
@@ -917,17 +1146,17 @@ function reopen(item) {
 function listHTML(items, empty, removable) {
   if (!items.length) return `<p class="empty">${empty}</p>`;
   return items.map((it, i) => `<div class="list-item">
-    <span class="kind">${KIND[it.type] || it.type}</span>
+    <span class="kind">${t('kind.' + it.type)}</span>
     <button class="main" data-i="${i}"><span class="t">${esc(it.label)}</span><span class="s">${esc(it.sub || '')}</span></button>
-    ${removable ? `<button class="icon small" data-rm="${i}" aria-label="Quitar"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ''}
+    ${removable ? `<button class="icon small" data-rm="${i}" aria-label="${t('aria.remove')}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>` : ''}
   </div>`).join('');
 }
 
 function renderMore(kind) {
   const body = $('#more-body');
   if (kind === 'saved') {
-    body.innerHTML = listHTML(SAVED, 'Todavía no guardaste nada. Tocá la estrella en un verbo, una palabra o una traducción para guardarlo acá.', true) +
-      (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">Copiar la lista como texto</button></div>` : '');
+    body.innerHTML = listHTML(SAVED, t('more.savedEmpty'), true) +
+      (SAVED.length ? `<div class="settings-row"><button class="ghost" id="export">${t('more.copyList')}</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(SAVED[+b.dataset.i]));
     $$('[data-rm]', body).forEach(b => b.onclick = () => {
       SAVED.splice(+b.dataset.rm, 1); store.set('vos.saved', SAVED); renderMore('saved');
@@ -935,76 +1164,78 @@ function renderMore(kind) {
     const ex = $('#export', body);
     if (ex) ex.onclick = async () => {
       const txt = SAVED.map(s => `${s.label}${s.sub ? ' — ' + s.sub : ''}`).join('\n');
-      try { await navigator.clipboard.writeText(txt); toast('Copiado'); } catch { toast('No se pudo copiar'); }
+      try { await navigator.clipboard.writeText(txt); toast(t('copied')); } catch { toast(t('copyFail')); }
     };
   }
   if (kind === 'history') {
-    body.innerHTML = listHTML(HIST, 'Todavía no hay historial.', false) +
-      (HIST.length ? `<div class="settings-row"><button class="ghost" id="clear-h">Borrar historial</button></div>` : '');
+    body.innerHTML = listHTML(HIST, t('more.histEmpty'), false) +
+      (HIST.length ? `<div class="settings-row"><button class="ghost" id="clear-h">${t('more.clearHist')}</button></div>` : '');
     $$('[data-i]', body).forEach(b => b.onclick = () => reopen(HIST[+b.dataset.i]));
     const c = $('#clear-h', body);
     if (c) c.onclick = () => { HIST = []; store.set('vos.history', HIST); renderMore('history'); };
   }
   if (kind === 'settings') {
-    const masked = S.key ? S.key.slice(0, 10) + '…' + S.key.slice(-4) : '';
-    const opts = cur => Object.entries(MODELS).map(([id, n]) => `<option value="${id}" ${id === cur ? 'selected' : ''}>${esc(n)}</option>`).join('');
+    const masked = S.key ? S.key.slice(0, 8) + '…' + S.key.slice(-4) : '';
+    const prov = providerOf(S.key);
     body.innerHTML = `
-      <label class="field-label" for="set-key">Clave de API de Anthropic</label>
-      <input type="password" id="set-key" placeholder="${masked ? esc(masked) : 'sk-ant-…'}" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <label class="field-label" for="set-ui">${t('set.ui')}</label>
+      <div class="seg" id="set-ui" role="radiogroup" aria-label="${t('set.ui')}">
+        <button data-v="es">Español</button><button data-v="en">English</button>
+      </div>
+
+      <label class="field-label">${t('set.explain')}</label>
+      <div class="seg" id="set-explain" role="radiogroup" aria-label="${t('set.explain')}">
+        <button data-v="es">${t('lang.es')}</button><button data-v="en">${t('lang.en')}</button>
+      </div>
+      <p class="help">${t('set.explainHelp')}</p>
+
+      <label class="field-label" for="set-key">${t('set.key')}</label>
+      <input type="password" id="set-key" placeholder="${masked ? esc(masked) : 'sk-ant-…  /  AIza…'}" autocomplete="off" autocapitalize="off" spellcheck="false">
       <div class="settings-row">
-        <button class="primary" id="save-key">Guardar clave</button>
-        <button class="ghost" id="test-key" ${S.key ? '' : 'disabled'}>Probar</button>
-        ${S.key ? `<button class="ghost" id="del-key">Quitar</button>` : ''}
+        <button class="primary" id="save-key">${t('set.saveKey')}</button>
+        <button class="ghost" id="test-key" ${S.key ? '' : 'disabled'}>${t('set.test')}</button>
+        ${S.key ? `<button class="ghost" id="del-key">${t('set.removeKey')}</button>` : ''}
       </div>
-      <p class="help">${S.key ? `Guardada en este teléfono: ${esc(masked)}.` : 'La necesitás para Palabra, Traducir y Corregir. Conjugar funciona sin clave.'}
-      La clave queda solo en este navegador y no se manda a ningún lado salvo a la API de Anthropic. Creala en <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> y poné un límite de gasto mensual ahí.</p>
+      <p class="help">${S.key ? t('set.keySaved', esc(masked), t('prov.' + prov)) : t('set.keyNone')} ${t('set.keyWhere')}
+      ${t('set.getKeys')} <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a> · <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com</a>.</p>
+      ${S.key ? `<p class="help ${prov === 'gemini' ? 'warnnote' : ''}">${prov === 'gemini' ? t('set.geminiTip') : t('set.anthropicTip')}</p>` : ''}
 
-      <label class="field-label">Explicaciones de la IA</label>
-      <div class="seg" id="set-explain" role="radiogroup" aria-label="Idioma de las explicaciones">
-        <button data-v="es">Español</button><button data-v="en">Inglés</button>
-      </div>
-      <p class="help">El porqué de cada corrección, las notas de Traducir y las notas acá / ojo. Las definiciones de Palabra siguen en inglés.</p>
+      <label class="field-label">${t('set.stored')}</label>
+      <p class="help">${t('set.storedLine', SAVED.length, HIST.length, Object.keys(AIVERBS).length)}</p>
+      <div class="settings-row"><button class="ghost" id="clear-ai" ${Object.keys(AIVERBS).length ? '' : 'disabled'}>${t('set.forgetAI')}</button></div>
 
-      <label class="field-label" for="set-model">Modelo para texto</label>
-      <select id="set-model">${opts(S.model)}</select>
-      <p class="help">Palabra, Traducir y Corregir. Haiku alcanza para casi todo.</p>
-
-      <label class="field-label" for="set-read">Modelo para fotos</label>
-      <select id="set-read">${opts(S.readModel)}</select>
-      <p class="help">Leer fotos, sobre todo letra a mano. Sonnet lee mucho mejor; cuesta algo más por foto.</p>
-
-      <label class="field-label">Guardado en este teléfono</label>
-      <p class="help">${SAVED.length} guardados · ${HIST.length} en el historial · ${Object.keys(AIVERBS).length} verbos conjugados por la IA</p>
-      <div class="settings-row"><button class="ghost" id="clear-ai" ${Object.keys(AIVERBS).length ? '' : 'disabled'}>Olvidar verbos de la IA</button></div>
-
-      <label class="field-label">Acerca de</label>
-      <p class="help">Vos ${VERSION}. Conjugaciones de la base Spanish Verb Forms de Fred Jehle, compilada por Brian Ghidinelli, usada bajo
-      <a href="https://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" rel="noopener">CC BY-NC-SA 3.0</a>. Las formas de vos, el subjuntivo en -se y haber se derivan o agregan acá.</p>`;
+      <label class="field-label">${t('set.about')}</label>
+      <p class="help">${t('set.aboutText', VERSION)}</p>`;
+    seg($('#set-ui'), S.ui, v => { S.ui = v; saveSettings(); refreshLanguage(); toast(t('ui.set')); });
+    seg($('#set-explain'), S.explain, v => { S.explain = v; saveSettings(); toast(t('explain.' + v)); });
     $('#save-key').onclick = () => {
       const v = $('#set-key').value.trim();
-      if (!v) return toast('Primero pegá una clave');
-      if (!/^sk-ant-/.test(v)) toast('No parece una clave de Anthropic; la guardé igual');
-      S.key = v; saveSettings(); renderMore('settings'); toast('Clave guardada');
+      if (!v) return toast(t('key.pasteFirst'));
+      if (!/^(sk-ant-|AIza)/.test(v)) toast(t('key.unknown'));
+      S.key = v; saveSettings(); renderMore('settings'); toast(t('key.saved'));
     };
     const del = $('#del-key');
-    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderMore('settings'); toast('Clave quitada'); };
+    if (del) del.onclick = () => { S.key = ''; saveSettings(); renderMore('settings'); toast(t('key.removed')); };
     $('#test-key').onclick = async () => {
-      const b = $('#test-key'); b.disabled = true; b.textContent = 'Probando…';
+      const b = $('#test-key'); b.disabled = true; b.textContent = t('set.testing');
       try {
-        const r = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json', 'x-api-key': S.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-          body: JSON.stringify({ model: S.model, max_tokens: 5, messages: [{ role: 'user', content: 'Decí "ta".' }] })
-        });
-        toast(r.ok ? 'La clave funciona' : r.status === 401 ? 'Clave rechazada' : `Error ${r.status}`);
-      } catch { toast('No se pudo conectar con la API'); }
-      b.disabled = false; b.textContent = 'Probar';
+        await ask({ system: 'Reply with JSON only.', content: 'Reply with {"ok":true}', maxTokens: 30 });
+        toast(t('key.works'));
+      } catch (e) { toast(e.message || String(e)); }
+      b.disabled = false; b.textContent = t('set.test');
     };
-    seg($('#set-explain'), S.explain, v => { S.explain = v; saveSettings(); toast(v === 'es' ? 'Explicaciones en español' : 'Explicaciones en inglés'); });
-    $('#set-model').onchange = e => { S.model = e.target.value; saveSettings(); toast('Modelo para texto actualizado'); };
-    $('#set-read').onchange = e => { S.readModel = e.target.value; saveSettings(); toast('Modelo para fotos actualizado'); };
     $('#clear-ai').onclick = () => { AIVERBS = {}; store.set('vos.aiverbs', AIVERBS); renderMore('settings'); };
   }
+}
+
+/* Re-render everything that shows interface text after the language changes. */
+function refreshLanguage() {
+  applyI18n();
+  paintDir();
+  paintMics();
+  $('#tr-miclang').setAttribute('aria-label', t('aria.miclang', trMicLang));
+  if (S.view === 'more') renderMore(S.moreTab);
+  if (DATA) runConj();
 }
 
 /* ============================================================
@@ -1041,20 +1272,20 @@ async function openStage(target, file) {
     const { img, url } = await loadImage(file);
     STAGE[target] = { img, url, rot: 0 };
     renderStage(target);
-  } catch { failed(box, new Error('No se pudo abrir esa imagen.')); }
+  } catch { failed(box, new Error(t('err.image'))); }
 }
 function renderStage(target) {
   const st = STAGE[target];
   const box = $('#' + target + '-stage');
   box.innerHTML = `<div class="stage">
     <div class="stage-img"></div>
-    <p class="help" style="margin:8px 0 0">Si el texto no está derecho, giralo antes de mandarlo.</p>
+    <p class="help" style="margin:8px 0 0">${t('stage.hint')}</p>
     <div class="row">
-      <button class="icon cam" data-rot aria-label="Girar">
+      <button class="icon cam" data-rot aria-label="${t('aria.rotate')}">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/></svg>
       </button>
-      <button class="ghost" data-cancel>Cancelar</button>
-      <button class="primary grow" data-send>${target === 'tr' ? 'Traducir foto' : 'Leer foto'}</button>
+      <button class="ghost" data-cancel>${t('stage.cancel')}</button>
+      <button class="primary grow" data-send>${target === 'tr' ? t('stage.sendTr') : t('stage.sendRead')}</button>
     </div>
   </div>`;
   $('.stage-img', box).appendChild(drawRotated(st.img, st.rot, 900));
@@ -1118,7 +1349,7 @@ function paintMics() {
   $$('[data-mic]').forEach(b => {
     const on = !!dict && dict.target === b.dataset.mic;
     b.classList.toggle('live', on);
-    b.setAttribute('aria-label', on ? 'Dejar de dictar' : 'Dictar');
+    b.setAttribute('aria-label', on ? t('aria.stopDictate') : t('aria.dictate'));
   });
 }
 function showInterim(target, text) {
@@ -1136,7 +1367,7 @@ function appendDictated(target, text) {
   if (target === 'check') checkDictated = true;
 }
 function startDictation(target) {
-  if (!SR) return toast('Este navegador no permite dictar. Usá el micrófono del teclado.');
+  if (!SR) return toast(t('dict.unsupported'));
   if (dict) { const same = dict.target === target; stopDictation(); if (same) return; }
   const langs = target === 'tr' && trMicLang === 'en' ? ['en-US'] : ['es-UY', 'es-AR', 'es-419'];
   const d = { target, want: true, lastHeard: Date.now(), langs };
@@ -1160,8 +1391,8 @@ function startDictation(target) {
       d.lastHeard = Date.now();
     };
     rec.onerror = e => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { d.want = false; toast('Permití el micrófono para poder dictar.'); }
-      else if (e.error === 'network') { d.want = false; toast('Dictar necesita conexión.'); }
+      if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { d.want = false; toast(t('dict.perm')); }
+      else if (e.error === 'network') { d.want = false; toast(t('dict.net')); }
       else if (e.error === 'language-not-supported' && d.langs.length > 1) d.langs.shift();
     };
     rec.onend = () => {
@@ -1170,12 +1401,12 @@ function startDictation(target) {
       if (d.want && Date.now() - d.lastHeard < 60000) {
         try { begin(); return; } catch {}
       }
-      if (d.want && Date.now() - d.lastHeard >= 60000) toast('Dejé de escuchar después de un minuto en silencio.');
+      if (d.want && Date.now() - d.lastHeard >= 60000) toast(t('dict.silence'));
       dict = null; paintMics();
     };
     rec.start();
   };
-  try { begin(); } catch { dict = null; toast('No se pudo empezar a dictar.'); }
+  try { begin(); } catch { dict = null; toast(t('dict.fail')); }
   paintMics();
 }
 function stopDictation() {
@@ -1192,14 +1423,16 @@ $('#tr-miclang').onclick = () => {
   trMicLang = trMicLang === 'es' ? 'en' : 'es';
   const b = $('#tr-miclang');
   b.textContent = trMicLang.toUpperCase();
-  b.setAttribute('aria-label', `Idioma del dictado: ${trMicLang === 'es' ? 'español' : 'inglés'}`);
+  b.setAttribute('aria-label', t('aria.miclang', trMicLang));
   if (dict && dict.target === 'tr') { stopDictation(); startDictation('tr'); }
-  toast(trMicLang === 'es' ? 'Dictado en español' : 'Dictado en inglés');
+  toast(t('dict.lang', trMicLang));
 };
 
 /* ============================================================
    BOOT
    ============================================================ */
+applyI18n();
+$('#tr-miclang').setAttribute('aria-label', t('aria.miclang', trMicLang));
 paintDir();
 paintClear('tr'); paintClear('check');
 if (!SR) $$('[data-mic], #tr-miclang').forEach(b => b.hidden = true);

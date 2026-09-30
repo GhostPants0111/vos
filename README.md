@@ -4,15 +4,15 @@ A personal Spanish reference for Android, tuned for Uruguay. Installable as an a
 
 **Conjugate** works fully offline: 638 verbs, every tense, vos first. Type an infinitive for the full table, or any conjugated form (`dijeran`, `andate`, `sos`) to find out what it is. Verbs outside the database can be conjugated by AI, clearly labelled.
 
-**Palabra**, **Traducir** and **Corregir** call Claude through your own Anthropic API key, with prompts that target Montevideo usage rather than generic Latin American Spanish. Text goes to Haiku; photos go to Sonnet, which reads handwriting far better. Traducir and Corregir also take dictation through Chrome's built-in speech recognition. The interface is in Spanish.
+**Palabra**, **Traducir** and **Corregir** call AI through your own API key, with prompts that target Montevideo usage rather than generic Latin American Spanish. With an Anthropic key, text goes to Claude Haiku and photos to Claude Sonnet, which reads handwriting far better. With a Google Gemini key (free tier available at aistudio.google.com) everything goes to Gemini Flash. The app tells the two apart from the key itself. Traducir and Corregir also take dictation through Chrome's built-in speech recognition. The interface is in Spanish or English, and AI explanations have their own language setting.
 
 ## Install on the phone
 
 1. Open the site in Chrome.
 2. Menu, then **Add to home screen** (or **Install app**).
-3. Open it, go to **Más → Ajustes**, paste your Anthropic API key, tap **Probar**.
+3. Open it, go to **Más → Ajustes**, paste an Anthropic or Google Gemini API key, tap **Probar**.
 
-The key is stored only in that browser on that phone. It is never in this repo. Set a monthly spend limit in the Anthropic Console.
+The key is stored only in that browser on that phone. It is never in this repo. With Anthropic, set a monthly spend limit in the Console. On Gemini's free tier, Google may use what you send to improve its products.
 
 ## Updating
 

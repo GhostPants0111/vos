@@ -4,15 +4,19 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-15. **"¿Qué es esto?" photo lookup on Palabra.** Camera and gallery buttons on Palabra. Every object or dish in the photo named the way it's said in Uruguay: el/la + word, most prominent first, up to about 8, the general term when it differs (frutilla, fresa elsewhere), a one-line description for dishes, a short position hint when useful ("the small round green one, front left"), and a flag when the model isn't sure. A list, not labels drawn on the photo. Each item: tap to hear, star, open a full Palabra lookup. Optional short text box with the photo to focus it ("just the food", "¿qué es lo de la izquierda?"). Uses the photo model (Sonnet, or Gemini Flash with a Gemini key). _Small-medium. Approved, hold for next batch._
+15. **"¿Qué es esto?" photo lookup on Palabra.** Camera and gallery buttons on Palabra. Every object or dish in the photo named the way it's said in Uruguay: el/la + word, most prominent first, up to about 8, the general term when it differs (frutilla, fresa elsewhere), a one-line description for dishes, a short position hint when useful ("the small round green one, front left"), and a flag when the model isn't sure. A list, not labels drawn on the photo. Each item: tap to hear, star, open a full Palabra lookup. Optional short text box with the photo to focus it ("just the food", "¿qué es lo de la izquierda?"). Uses the photo model (Sonnet, or Gemini Flash with a Gemini key). _Small-medium. Approved._
+
+16. **Country / variety setting.** Principle: Uruguay-first. Uruguay is the default, first in the list and the app's identity; no auto-switching from the phone's language, changing country is always a deliberate choice in Ajustes.
+    Decided so far: every Spanish-speaking country as its own entry, no grouping. The "acá" note on Palabra (and all regional notes) follows the selected country. Every country prompt carries a rule not to invent differences: if usage matches the wider region, say nothing.
+    Conjugar modes: vos first (Uruguay, Argentina, Paraguay, Nicaragua, Costa Rica, Guatemala, Honduras, El Salvador); tú first with vos shown (Bolivia, Colombia, Venezuela, Ecuador, Chile plus a present-tense "voseo chileno" row); tú only (Perú, México, Cuba, República Dominicana, Puerto Rico, Panamá); tú only plus vosotros shown automatically (España).
+    Country notes: Argentina same forms as UY, vos subjunctive more accepted; Paraguay Guaraní mixing; Chile verbal voseo (estái, podís); Bolivia vos in Santa Cruz and Tarija; Colombia usted among friends, vos in Medellín and Cali; Costa Rica ustedeo; Ecuador vos in the Sierra; Venezuela vos in Zulia; España leísmo, vosotros. Smaller varieties get thinner AI knowledge.
+    Not included: Estados Unidos (US Spanish comes from other countries' varieties) and Guinea Ecuatorial. _Medium. Approved._
+
+17. **Setup guide for new users.** When the app opens with no API key, show a guide: Conjugar works right away; for the AI tabs, step-by-step for a free Google Gemini key (recommended for newcomers) or a paid Anthropic key; paste the key right in the guide and test it. Also reachable from Ajustes and from the "no key" error. Includes install-to-home-screen steps for Android and iPhone. _Small-medium. Approved._
+
+18. **Make camera, gallery and dictation work on iPhone.** Visually hidden file inputs instead of display:none (iOS label quirk); dictation without auto-restart on iOS (Safari only allows mic start from a tap) and a keyboard-mic fallback message; tab bar lifted above the iOS keyboard using visualViewport; voice list loaded lazily for iOS speech. Can't test on a real iPhone from here; needs a real-device check. _Small. Approved._
 
 ## Proposed, not yet approved
-
-- **Country / variety setting** (in design with Cory). Principle: Uruguay-first. Uruguay is the default, first in the list and the app's identity; no auto-switching from the phone's language, changing country is always a deliberate choice in Ajustes.
-  Decided so far: every Spanish-speaking country as its own entry, no grouping. The "acá" note on Palabra (and all regional notes) follows the selected country. Every country prompt carries a rule not to invent differences: if usage matches the wider region, say nothing.
-  Conjugar modes: vos first (Uruguay, Argentina, Paraguay, Nicaragua, Costa Rica, Guatemala, Honduras, El Salvador); tú first with vos shown (Bolivia, Colombia, Venezuela, Ecuador, Chile plus a present-tense "voseo chileno" row); tú only (Perú, México, Cuba, República Dominicana, Puerto Rico, Panamá); tú only plus vosotros shown automatically (España).
-  Country notes: Argentina same forms as UY, vos subjunctive more accepted; Paraguay Guaraní mixing; Chile verbal voseo (estái, podís); Bolivia vos in Santa Cruz and Tarija; Colombia usted among friends, vos in Medellín and Cali; Costa Rica ustedeo; Ecuador vos in the Sierra; Venezuela vos in Zulia; España leísmo, vosotros. Smaller varieties get thinner AI knowledge.
-  Open: whether to include Estados Unidos and Guinea Ecuatorial. _Medium._
 
 - Tappable word-family entries on Word cards (each tap is a new lookup). Parked: maybe later.
 - Report button on AI results that copies input + output in one tap, for faster feedback.

@@ -5,11 +5,14 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.8.0';
+const VERSION = '1.8.1';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
-const GEMINI_MODEL = 'gemini-3.8-flash';
+// Newest first. When Google says a model is busy (503/500), over quota (429) or
+// unavailable (404), the next one is tried. All are on the free tier.
+const GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+let geminiFrom = 0;   // the model that last worked, so a busy one isn't retried every time this session
 // Anthropic keys always start with sk-ant-. Everything else is treated as Google:
 // AI Studio now issues AQ. keys; older keys start with AIza.
 const providerOf = k => /^sk-ant-/.test((k || '').trim()) ? 'anthropic' : 'gemini';
@@ -611,12 +614,17 @@ function geminiParts(content) {
     ? { inlineData: { mimeType: b.source.media_type, data: b.source.data } }
     : { text: b.text });
 }
-async function askGemini(system, content, maxTokens, lowThinking, viaQuery = false) {
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function askGemini(system, content, maxTokens, lowThinking, viaQuery = false, mi = geminiFrom, lastBusy = '') {
+  if (mi >= GEMINI_MODELS.length) {
+    throw new Error(t(lastBusy === 'quota' ? 'err.geminiQuota' : 'err.busy'));
+  }
+  const model = GEMINI_MODELS[mi];
   const generationConfig = { maxOutputTokens: Math.max(8192, maxTokens * 4), responseMimeType: 'application/json' };
   if (lowThinking) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
   let r;
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent` +
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent` +
       (viaQuery ? `?key=${encodeURIComponent(S.key.trim())}` : '');
     const headers = { 'content-type': 'application/json' };
     if (!viaQuery) headers['x-goog-api-key'] = S.key.trim();
@@ -633,15 +641,19 @@ async function askGemini(system, content, maxTokens, lowThinking, viaQuery = fal
   if (!r.ok) {
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
-    // Older or newer models may not accept the thinking setting; retry once without it.
-    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false, viaQuery);
+    // Some models don't accept the thinking setting; retry once without it.
+    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false, viaQuery, mi, lastBusy);
     const keyProblem = r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(detail));
-    if (keyProblem && !viaQuery) return askGemini(system, content, maxTokens, lowThinking, true);
+    if (keyProblem && !viaQuery) return askGemini(system, content, maxTokens, lowThinking, true, mi, lastBusy);
     if (keyProblem) throw new Error(t('err.key') + (detail ? ` (Google: ${detail.slice(0, 160)})` : ''));
-    if (r.status === 429) throw new Error(t('err.geminiQuota'));
-    if (r.status === 500 || r.status === 503) throw new Error(t('err.busy'));
+    // Busy, over this model's free quota, or model not available: fall back to the next model.
+    if ([429, 500, 503, 404].includes(r.status)) {
+      await sleep(400);
+      return askGemini(system, content, maxTokens, lowThinking, viaQuery, mi + 1, r.status === 429 ? 'quota' : 'busy');
+    }
     throw new Error(t('err.api', r.status, detail));
   }
+  geminiFrom = mi;
   const d = await r.json();
   const c = d.candidates && d.candidates[0];
   const text = ((c && c.content && c.content.parts) || []).filter(p => p.text && !p.thought).map(p => p.text).join('');

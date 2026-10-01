@@ -14,6 +14,10 @@ _None open._
 
 ## Done
 
+### v1.8.1 (2026-10-01)
+
+- **Fix: Gemini kept answering "overloaded".** Google returns 503 when a model is busy across all users, and free-tier traffic is turned away first; gemini-3.8-flash (newest) is the most crowded. The app now falls back through gemini-3.6-flash, 3.5-flash and 3.5-flash-lite on 503/500/429/404, remembers which one worked for the rest of the session, and only shows "overloaded" if all four are busy.
+
 ### v1.8.0 (2026-10-01)
 
 21. **Setup guide: focus on getting the app working; phones only.**

@@ -5,12 +5,15 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.7.0';
+const VERSION = '1.7.1';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
 const GEMINI_MODEL = 'gemini-3.8-flash';
-const providerOf = k => /^AIza/.test(k || '') ? 'gemini' : 'anthropic';
+// Anthropic keys always start with sk-ant-. Everything else is treated as Google:
+// AI Studio now issues AQ. keys; older keys start with AIza.
+const providerOf = k => /^sk-ant-/.test((k || '').trim()) ? 'anthropic' : 'gemini';
+const KNOWN_KEY = /^(sk-ant-|AQ\.|AIza)/;
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -142,7 +145,7 @@ const I18N = {
     'g.freeTitle': 'Opción gratis: Google Gemini',
     'g.free1': 'Entrá a <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> con tu cuenta de Google.',
     'g.free2': 'Aceptá los términos si te los pide y tocá <b>Create API key</b>.',
-    'g.free3': 'Copiá la clave. Empieza con <b>AIza</b>.',
+    'g.free3': 'Copiá la clave. Empieza con <b>AQ.</b> (las más viejas empiezan con <b>AIza</b>; también sirven).',
     'g.free4': 'Pegala acá abajo y tocá <b>Guardar y probar</b>.',
     'g.paidTitle': 'Opción de pago: Claude (Anthropic), mejor calidad',
     'g.paid1': 'Creá una cuenta en <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.',
@@ -275,7 +278,7 @@ const I18N = {
     'g.freeTitle': 'Free option: Google Gemini',
     'g.free1': 'Go to <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a> and sign in with your Google account.',
     'g.free2': 'Accept the terms if asked, then tap <b>Create API key</b>.',
-    'g.free3': 'Copy the key. It starts with <b>AIza</b>.',
+    'g.free3': 'Copy the key. It starts with <b>AQ.</b> (older keys start with <b>AIza</b>; those work too).',
     'g.free4': 'Paste it below and tap <b>Save and test</b>.',
     'g.paidTitle': 'Paid option: Claude (Anthropic), better quality',
     'g.paid1': 'Create an account at <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a>.',
@@ -604,14 +607,18 @@ function geminiParts(content) {
     ? { inlineData: { mimeType: b.source.media_type, data: b.source.data } }
     : { text: b.text });
 }
-async function askGemini(system, content, maxTokens, lowThinking) {
+async function askGemini(system, content, maxTokens, lowThinking, viaQuery = false) {
   const generationConfig = { maxOutputTokens: Math.max(8192, maxTokens * 4), responseMimeType: 'application/json' };
   if (lowThinking) generationConfig.thinkingConfig = { thinkingLevel: 'low' };
   let r;
   try {
-    r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent` +
+      (viaQuery ? `?key=${encodeURIComponent(S.key.trim())}` : '');
+    const headers = { 'content-type': 'application/json' };
+    if (!viaQuery) headers['x-goog-api-key'] = S.key.trim();
+    r = await fetch(url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': S.key },
+      headers,
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: 'user', parts: geminiParts(content) }],
@@ -623,8 +630,10 @@ async function askGemini(system, content, maxTokens, lowThinking) {
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
     // Older or newer models may not accept the thinking setting; retry once without it.
-    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false);
-    if (r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(detail))) throw new Error(t('err.key'));
+    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false, viaQuery);
+    const keyProblem = r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(detail));
+    if (keyProblem && !viaQuery) return askGemini(system, content, maxTokens, lowThinking, true);
+    if (keyProblem) throw new Error(t('err.key') + (detail ? ` (Google: ${detail.slice(0, 160)})` : ''));
     if (r.status === 429) throw new Error(t('err.geminiQuota'));
     if (r.status === 500 || r.status === 503) throw new Error(t('err.busy'));
     throw new Error(t('err.api', r.status, detail));
@@ -1464,7 +1473,7 @@ function renderMore(kind) {
       <p class="help">${t('set.explainHelp')}</p>
 
       <label class="field-label" for="set-key">${t('set.key')}</label>
-      <input type="password" id="set-key" placeholder="${masked ? esc(masked) : 'sk-ant-…  /  AIza…'}" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input type="password" id="set-key" placeholder="${masked ? esc(masked) : 'AQ.…  /  sk-ant-…'}" autocomplete="off" autocapitalize="off" spellcheck="false">
       <div class="settings-row">
         <button class="primary" id="save-key">${t('set.saveKey')}</button>
         <button class="ghost" id="test-key" ${S.key ? '' : 'disabled'}>${t('set.test')}</button>
@@ -1493,7 +1502,7 @@ function renderMore(kind) {
     $('#save-key').onclick = () => {
       const v = $('#set-key').value.trim();
       if (!v) return toast(t('key.pasteFirst'));
-      if (!/^(sk-ant-|AIza)/.test(v)) toast(t('key.unknown'));
+      if (!KNOWN_KEY.test(v)) toast(t('key.unknown'));
       S.key = v; saveSettings(); renderMore('settings'); toast(t('key.saved'));
     };
     const del = $('#del-key');
@@ -1704,7 +1713,7 @@ function openGuide() {
     <h3>${t('g.paidTitle')}</h3>
     <ol><li>${t('g.paid1')}</li><li>${t('g.paid2')}</li><li>${t('g.paid3')}</li><li>${t('g.paid4')}</li></ol>
     <label class="field-label" for="g-key">${t('g.paste')}</label>
-    <input type="password" id="g-key" placeholder="AIza…  /  sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <input type="password" id="g-key" placeholder="AQ.…  /  sk-ant-…" autocomplete="off" autocapitalize="off" spellcheck="false">
     <div class="settings-row">
       <button class="primary" id="g-save">${t('g.saveTest')}</button>
       <button class="ghost" id="g-later">${t('g.later')}</button>
@@ -1720,7 +1729,7 @@ function openGuide() {
     const v = $('#g-key').value.trim();
     const st = $('#g-status');
     if (!v) return toast(t('key.pasteFirst'));
-    if (!/^(sk-ant-|AIza)/.test(v)) toast(t('key.unknown'));
+    if (!KNOWN_KEY.test(v)) toast(t('key.unknown'));
     S.key = v; saveSettings();
     const b = $('#g-save'); b.disabled = true;
     st.hidden = false; st.className = 'msg'; st.innerHTML = `<span class="spinner"></span>${t('set.testing')}`;

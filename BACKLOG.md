@@ -17,6 +17,10 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Done
 
+### v1.7.1 (2026-10-01)
+
+- **Fix: Google keys always showed "rejected".** Google AI Studio now issues keys starting with AQ. (the old AIza keys are being retired), and the app only recognised AIza, so AQ. keys were sent to Anthropic. Now any key that isn't sk-ant- goes to Gemini; the guide says keys start with AQ.; if Google refuses the key in the header the app retries with it in the URL; key errors show Google's own reason.
+
 ### v1.7.0 (2026-09-30)
 
 20. **Install prompt when opened in a phone browser.** A banner at the top when Vos runs in the browser instead of from the home screen, on phones only. Android: a one-tap Instalar button that opens Chrome's own install dialog; if Chrome hasn't offered it yet, menu ⋮ → Agregar a la pantalla principal instructions. iPhone: Compartir → Agregar a inicio instructions, with the warning that Safari may erase data otherwise. Hidden once installed, on desktop, and for the rest of the session after dismissing or answering the install dialog. Follows the app language. _Small._

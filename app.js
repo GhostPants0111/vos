@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.8.1';
+const VERSION = '1.8.2';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -75,7 +75,7 @@ const I18N = {
     'err.rate': 'Demasiadas consultas seguidas. Esperá unos segundos y probá de nuevo.',
     'err.busy': 'La API está saturada. Probá de nuevo en un rato.',
     'err.credit': 'Tu cuenta de Anthropic se quedó sin crédito. Cargá saldo en la Console.',
-    'err.geminiQuota': 'Llegaste al límite gratis de Gemini. Esperá un rato o probá mañana.',
+    'err.geminiQuota': 'Llegaste al límite gratis de Gemini. Esperá un minuto, o hasta mañana si es el límite diario. Tus límites están en aistudio.google.com/rate-limit.',
     'err.api': (s, d) => `Error de la API ${s}${d ? ': ' + d : ''}`,
     'err.unexpected': 'Llegó una respuesta inesperada. Probá de nuevo.',
     'err.unreadable': 'Llegó una respuesta ilegible. Probá de nuevo.',
@@ -210,7 +210,7 @@ const I18N = {
     'err.rate': 'Too many requests in a row. Wait a few seconds and try again.',
     'err.busy': 'The API is overloaded right now. Try again in a moment.',
     'err.credit': 'Your Anthropic account is out of credit. Top up in the Console.',
-    'err.geminiQuota': "You've hit Gemini's free limit. Wait a while or try again tomorrow.",
+    'err.geminiQuota': "You've hit Gemini's free limit. Wait a minute, or until tomorrow if it's the daily limit. Your limits are at aistudio.google.com/rate-limit.",
     'err.api': (s, d) => `API error ${s}${d ? ': ' + d : ''}`,
     'err.unexpected': 'Got an unexpected reply. Try again.',
     'err.unreadable': 'Got an unreadable reply. Try again.',
@@ -615,9 +615,13 @@ function geminiParts(content) {
     : { text: b.text });
 }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-async function askGemini(system, content, maxTokens, lowThinking, viaQuery = false, mi = geminiFrom, lastBusy = '') {
+async function askGemini(system, content, maxTokens, lowThinking, viaQuery = false, mi = geminiFrom, trail = []) {
   if (mi >= GEMINI_MODELS.length) {
-    throw new Error(t(lastBusy === 'quota' ? 'err.geminiQuota' : 'err.busy'));
+    // Every model refused. Say what Google actually said for each one.
+    const limited = trail.some(x => x.status === 429);
+    const why = trail.map(x => `${x.model.replace('gemini-', '')}: ${x.status}${x.detail ? ' ' + x.detail.slice(0, 90) : ''}`).join(' · ');
+    geminiFrom = 0;
+    throw new Error(t(limited ? 'err.geminiQuota' : 'err.busy') + (why ? ` (Google: ${why})` : ''));
   }
   const model = GEMINI_MODELS[mi];
   const generationConfig = { maxOutputTokens: Math.max(8192, maxTokens * 4), responseMimeType: 'application/json' };
@@ -642,14 +646,17 @@ async function askGemini(system, content, maxTokens, lowThinking, viaQuery = fal
     let detail = '';
     try { detail = (await r.json()).error?.message || ''; } catch {}
     // Some models don't accept the thinking setting; retry once without it.
-    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false, viaQuery, mi, lastBusy);
+    if (r.status === 400 && lowThinking && /thinking/i.test(detail)) return askGemini(system, content, maxTokens, false, viaQuery, mi, trail);
     const keyProblem = r.status === 401 || r.status === 403 || (r.status === 400 && /api key/i.test(detail));
-    if (keyProblem && !viaQuery) return askGemini(system, content, maxTokens, lowThinking, true, mi, lastBusy);
+    if (keyProblem && !viaQuery) return askGemini(system, content, maxTokens, lowThinking, true, mi, trail);
     if (keyProblem) throw new Error(t('err.key') + (detail ? ` (Google: ${detail.slice(0, 160)})` : ''));
     // Busy, over this model's free quota, or model not available: fall back to the next model.
     if ([429, 500, 503, 404].includes(r.status)) {
+      trail.push({ model, status: r.status, detail });
+      // A per-minute limit applies to every model in the project, so trying more only burns requests.
+      if (r.status === 429 && /per.?minute|PerMinute|RPM/i.test(detail)) return askGemini(system, content, maxTokens, lowThinking, viaQuery, GEMINI_MODELS.length, trail);
       await sleep(400);
-      return askGemini(system, content, maxTokens, lowThinking, viaQuery, mi + 1, r.status === 429 ? 'quota' : 'busy');
+      return askGemini(system, content, maxTokens, lowThinking, viaQuery, mi + 1, trail);
     }
     throw new Error(t('err.api', r.status, detail));
   }

@@ -1,10 +1,11 @@
 // Offline cache for Vos. Bump VERSION whenever app files change.
-const VERSION = 'vos-1.7.1';
+const VERSION = 'vos-1.8.0';
 const CORE = [
   './',
   'index.html',
   'style.css',
   'app.js',
+  'lib/qrcode.js',
   'manifest.webmanifest',
   'data/verbs.json',
   'icons/icon-192.png',

@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.7.1';
+const VERSION = '1.8.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -139,7 +139,9 @@ const I18N = {
     'ident.none': 'No reconocí nada en esa foto.', 'ident.general': 'en otros lados:',
     'ident.unsure': 'no estoy seguro', 'ident.look': 'Ver palabra', 'kind.ident': 'foto',
     'g.title': 'Bienvenido a Vos',
-    'g.intro': 'Conjugar ya funciona, sin clave y sin conexión. Palabra, Traducir y Corregir usan IA y necesitan una clave de API. Se consigue en un par de minutos.',
+    'g.intro': 'Para que Vos funcione necesitás una clave de API. Con Google es gratis y se consigue en un par de minutos.',
+    'g.desktop': 'Vos está hecha para el celular. Escaneá este código con la cámara de tu Android o iPhone, o abrí este link ahí:',
+    'g.anyway': 'Usarla igual en esta computadora',
     'g.installIos': 'En iPhone, primero instalala: en Safari tocá Compartir (el cuadrado con la flecha) → <b>Agregar a inicio</b>. Si la usás solo dentro de Safari, el iPhone puede borrar tu clave y tus guardados.',
     'g.installAndroid': 'Para usarla como app: en Chrome tocá el menú ⋮ → <b>Agregar a la pantalla principal</b> (o <b>Instalar app</b>).',
     'g.freeTitle': 'Opción gratis: Google Gemini',
@@ -272,7 +274,9 @@ const I18N = {
     'ident.none': "Couldn't recognise anything in that photo.", 'ident.general': 'elsewhere:',
     'ident.unsure': 'not sure', 'ident.look': 'Look it up', 'kind.ident': 'photo',
     'g.title': 'Welcome to Vos',
-    'g.intro': 'Conjugate already works, with no key and no connection. Word, Translate and Check use AI and need an API key. It takes a couple of minutes to get one.',
+    'g.intro': "To get Vos working you need an API key. With Google it's free and takes a couple of minutes.",
+    'g.desktop': 'Vos is made for your phone. Scan this code with your Android or iPhone camera, or open this link there:',
+    'g.anyway': 'Use it on this computer anyway',
     'g.installIos': 'On iPhone, install it first: in Safari tap Share (the square with the arrow) → <b>Add to Home Screen</b>. If you only use it inside Safari, the iPhone may erase your key and saved items.',
     'g.installAndroid': 'To use it as an app: in Chrome tap the ⋮ menu → <b>Add to Home screen</b> (or <b>Install app</b>).',
     'g.freeTitle': 'Free option: Google Gemini',
@@ -656,7 +660,7 @@ function failed(el, e) {
   el.innerHTML = `<p class="msg err">${esc(e.message || e)}</p>` +
     (e && e.code === 'nokey' ? `<div class="row"><button class="primary" data-guide>${t('g.setup')}</button></div>` : '');
   const g = $('[data-guide]', el);
-  if (g) g.onclick = openGuide;
+  if (g) g.onclick = () => openGuide({ direct: true });
 }
 
 /* ============================================================
@@ -1496,7 +1500,7 @@ function renderMore(kind) {
       esVoice = null;
       saveSettings(); refreshLanguage(); toast(t('country.set', cName()));
     };
-    $('#open-guide').onclick = openGuide;
+    $('#open-guide').onclick = () => openGuide({ direct: true });
     seg($('#set-ui'), S.ui, v => { S.ui = v; saveSettings(); refreshLanguage(); toast(t('ui.set')); });
     seg($('#set-explain'), S.explain, v => { S.explain = v; saveSettings(); toast(t('explain.' + v)); });
     $('#save-key').onclick = () => {
@@ -1699,12 +1703,27 @@ function renderIdent(d, b64) {
    ============================================================ */
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const STANDALONE = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
-function openGuide() {
+const PHONE = IOS || /Android/i.test(navigator.userAgent);
+function appLink() { return location.origin + location.pathname; }
+function qrSVG(text) {
+  try { const q = qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 5, margin: 2, scalable: true }); }
+  catch { return ''; }
+}
+/* opts.direct: skip the "open it on your phone" screen (used from Ajustes and the no-key button). */
+function openGuide(opts = {}) {
   const g = $('#guide');
-  const install = STANDALONE() ? '' : `<div class="gnote">${IOS ? t('g.installIos') : t('g.installAndroid')}</div>`;
+  const gate = !PHONE && !opts.direct;
+  const install = PHONE && !STANDALONE() ? `<div class="gnote">${IOS ? t('g.installIos') : t('g.installAndroid')}</div>` : '';
   $('#guide-body').innerHTML = `
     <div class="ghead"><h2>${t('g.title')}</h2>
       <button class="icon" id="g-close" aria-label="${t('g.close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    ${gate ? `<div class="gdesk">
+      <p>${t('g.desktop')}</p>
+      <div class="gqr">${qrSVG(appLink())}</div>
+      <p class="glink"><a href="${esc(appLink())}">${esc(appLink().replace(/^https?:\/\//, ''))}</a></p>
+      <button class="link" id="g-anyway">${t('g.anyway')}</button>
+    </div>` : ''}
+    <div id="g-steps" ${gate ? 'hidden' : ''}>
     <p>${t('g.intro')}</p>
     ${install}
     <h3>${t('g.freeTitle')}</h3>
@@ -1719,7 +1738,10 @@ function openGuide() {
       <button class="ghost" id="g-later">${t('g.later')}</button>
     </div>
     <p class="msg" id="g-status" hidden></p>
-    <div class="settings-row"><button class="link" id="g-howto">${t('g.howto')}</button></div>`;
+    <div class="settings-row"><button class="link" id="g-howto">${t('g.howto')}</button></div>
+    </div>`;
+  const anyway = $('#g-anyway');
+  if (anyway) anyway.onclick = () => { $('#g-steps').hidden = false; anyway.hidden = true; $('#g-steps').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
   g.hidden = false;
   document.body.style.overflow = 'hidden';
   $('#g-close').onclick = closeGuide;

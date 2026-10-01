@@ -26,3 +26,5 @@ Conjugations come from the Spanish Verb Forms database by Fred Jehle, compiled b
 ([source](https://github.com/ghidinelli/fred-jehle-spanish-verbs)), licensed
 [CC BY-NC-SA 3.0](https://creativecommons.org/licenses/by-nc-sa/3.0/). Vos forms, the -se subjunctive and haber
 were derived or added here. This project is shared under the same licence.
+
+QR codes are drawn with [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) by Kazuhiko Arase (MIT licence), in `lib/qrcode.js`.

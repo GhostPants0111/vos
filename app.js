@@ -619,7 +619,7 @@ async function askGemini(system, content, maxTokens, lowThinking, viaQuery = fal
   if (mi >= GEMINI_MODELS.length) {
     // Every model refused. Say what Google actually said for each one.
     const limited = trail.some(x => x.status === 429);
-    const why = trail.map(x => `${x.model.replace('gemini-', '')}: ${x.status}${x.detail ? ' ' + x.detail.slice(0, 90) : ''}`).join(' · ');
+    const why = trail.map(x => `${x.model.replace('gemini-', '')}: ${x.status}${x.detail ? ' ' + x.detail.slice(0, 170) : ''}`).join(' · ');
     geminiFrom = 0;
     throw new Error(t(limited ? 'err.geminiQuota' : 'err.busy') + (why ? ` (Google: ${why})` : ''));
   }

@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.8.2';
+const VERSION = '1.9.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -101,8 +101,8 @@ const I18N = {
     'lang.es': 'Español', 'lang.en': 'Inglés',
     'tr.detect': 'Detectar', 'tr.detected': l => `Detectado: ${l}`, 'tr.other': 'el otro', 'tr.autoToast': 'Detectar idioma',
     'tr.reading': 'Leyendo la foto…', 'tr.working': 'Traduciendo…',
-    'check.reading': 'Leyendo tu foto…', 'check.working': 'Corrigiendo…',
-    'check.readNote': n => `Esto es lo que leí, con los errores tal cual. Arreglá lo que haya leído mal${n ? ` (buscá [?], ${n} ${n > 1 ? 'lugares' : 'lugar'})` : ''} y después tocá <b>Corregir</b>. Tocá la foto para verla grande.`,
+    'check.reading': 'Leyendo y corrigiendo tu foto…', 'check.working': 'Corrigiendo…',
+    'check.readNote': n => `Arriba quedó lo que leí de tu foto, con tus errores tal cual. Si leí algo mal${n ? ` (buscá [?], ${n} ${n > 1 ? 'lugares' : 'lugar'})` : ''} y tocá <b>Corregir</b> de nuevo. Tocá la foto para verla grande.`,
     'check.count': n => `${n} ${n > 1 ? 'correcciones' : 'corrección'}`, 'check.none': 'Sin correcciones',
     'check.clean': 'No hay nada que corregir.', 'check.copy': 'Copiar corregido',
     'kind.conj': 'verbo', 'kind.verb': 'verbo', 'kind.word': 'palabra', 'kind.tr': 'traducción', 'kind.check': 'corrección',
@@ -176,7 +176,7 @@ const I18N = {
       'El micrófono dicta hasta que lo tocás de nuevo. ES / EN al lado elige el idioma en que hablás.'],
     'help.check': ['Escribí, pegá o dictá tu español y te marca cada error con una explicación corta.',
       'Solo errores corrige lo que está mal. Exigime también marca lo que suena poco natural.',
-      'Con una foto de algo escrito a mano o impreso, primero lo transcribe tal cual: revisalo contra la foto y después tocá Corregir.',
+      'Sacale una foto a algo escrito a mano o impreso y lo lee y lo corrige de una. Lo que leyó queda en el cuadro: si leyó algo mal, arreglalo y tocá Corregir de nuevo.',
       'Si dictás, no te marca puntuación ni tildes, solo gramática y palabras.'],
     'help.more': ['Guardados: todo lo que marcaste con la estrella. Historial: tus últimas búsquedas; tocá una para volver a verla.',
       'Ajustes: país, idioma de la app, idioma de las explicaciones y tu clave.'],
@@ -185,14 +185,16 @@ const I18N = {
     'inst.android': 'Instalá Vos como app: se abre al toque, funciona sin conexión y no se pierden tus datos.',
     'inst.androidManual': 'Instalá Vos como app: en Chrome tocá el menú ⋮ → <b>Agregar a la pantalla principal</b> (o <b>Instalar app</b>).',
     'inst.ios': 'Instalá Vos en tu iPhone: tocá <b>Compartir</b> (el cuadrado con la flecha) → <b>Agregar a inicio</b>. Así no se borran tu clave ni tus guardados.',
+    'inst.firefox': 'Instalá Vos como app: en Firefox tocá el menú ⋮ → <b>Instalar</b> (o <b>Agregar a la pantalla de inicio</b>). En Android, Vos anda mejor en Chrome: ahí el micrófono de la app funciona.',
+    'inst.otherAndroid': 'Instalá Vos como app: en el menú de tu navegador buscá <b>Instalar</b> o <b>Agregar a la pantalla de inicio</b>. En Android, Vos anda mejor en Chrome.',
     'inst.btn': 'Instalar', 'inst.done': 'Vos quedó instalada. Abrila desde tu pantalla de inicio.', 'inst.close': 'Ahora no'
   },
   en: {
-    'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Check', 'tab.more': 'More',
+    'tab.conj': 'Conjugate', 'tab.word': 'Word', 'tab.tr': 'Translate', 'tab.check': 'Correct', 'tab.more': 'More',
     'chip.person': 'By person', 'chip.vosotros': 'Vosotros', 'chip.se': '-se forms', 'chip.rare': 'Rare tenses',
     'ph.word': 'a word, in Spanish or English', 'btn.search': 'Look up',
     'ph.tr': 'Type or dictate in Spanish or English', 'btn.translate': 'Translate',
-    'ph.check': 'Write something, dictate it, or snap a photo.', 'btn.check': 'Check',
+    'ph.check': 'Write something, dictate it, or snap a photo.', 'btn.check': 'Correct',
     'reg.casual': 'Casual', 'reg.formal': 'Formal', 'mode.errors': 'Errors only', 'mode.push': 'Push me',
     'more.saved': 'Saved', 'more.history': 'History', 'more.settings': 'Settings',
     'aria.swap': 'Swap direction', 'aria.clear': 'Clear', 'aria.photo': 'Take a photo', 'aria.gallery': 'Choose a photo',
@@ -236,16 +238,16 @@ const I18N = {
     'lang.es': 'Spanish', 'lang.en': 'English',
     'tr.detect': 'Auto', 'tr.detected': l => `Detected: ${l}`, 'tr.other': 'the other one', 'tr.autoToast': 'Auto-detect',
     'tr.reading': 'Reading the photo…', 'tr.working': 'Translating…',
-    'check.reading': 'Reading your photo…', 'check.working': 'Checking…',
-    'check.readNote': n => `This is what I read, mistakes kept on purpose. Fix anything I misread${n ? ` (look for [?], ${n} spot${n > 1 ? 's' : ''})` : ''}, then tap <b>Check</b>. Tap the photo to see it full size.`,
+    'check.reading': 'Reading and correcting your photo…', 'check.working': 'Correcting…',
+    'check.readNote': n => `The box above has what I read from your photo, your mistakes kept as written. If I misread anything${n ? ` (look for [?], ${n} spot${n > 1 ? 's' : ''})` : ''}, then tap <b>Correct</b> again. Tap the photo to see it full size.`,
     'check.count': n => `${n} fix${n > 1 ? 'es' : ''}`, 'check.none': 'No fixes',
     'check.clean': 'Nothing to fix.', 'check.copy': 'Copy corrected',
-    'kind.conj': 'verb', 'kind.verb': 'verb', 'kind.word': 'word', 'kind.tr': 'translation', 'kind.check': 'check',
+    'kind.conj': 'verb', 'kind.verb': 'verb', 'kind.word': 'word', 'kind.tr': 'translation', 'kind.check': 'correction',
     'more.aiGone': 'That AI verb is no longer cached.',
     'more.savedEmpty': 'Nothing saved yet. Tap the star on a verb, word or translation to keep it here.',
     'more.copyList': 'Copy list as text', 'more.histEmpty': 'No history yet.', 'more.clearHist': 'Clear history',
     'set.key': 'API key', 'set.saveKey': 'Save key', 'set.test': 'Test', 'set.testing': 'Testing…', 'set.removeKey': 'Remove',
-    'set.keyNone': 'Needed for Word, Translate and Check; Conjugate works without it. Use an Anthropic key (Claude, paid) or a Google Gemini key (has a free tier). The app works out which one it is.',
+    'set.keyNone': 'Needed for Word, Translate and Correct; Conjugate works without it. Use an Anthropic key (Claude, paid) or a Google Gemini key (has a free tier). The app works out which one it is.',
     'set.keySaved': (m, p) => `Saved on this phone: ${m} · ${p}.`,
     'set.keyWhere': 'The key stays in this browser only and is sent nowhere except its provider’s API.',
     'set.getKeys': 'Get a key at',
@@ -311,7 +313,7 @@ const I18N = {
       'The mic keeps dictating until you tap it again. ES / EN next to it picks the language you are speaking.'],
     'help.check': ['Type, paste or dictate your Spanish and every mistake is marked with a short reason.',
       'Errors only fixes what is wrong. Push me also marks what sounds unnatural.',
-      'With a photo of handwriting or print, it first transcribes it exactly: check it against the photo, then tap Check.',
+      'Snap or pick a photo of handwriting or print and it reads and corrects it in one go. What it read goes into the box: if it misread something, fix it and tap Correct again.',
       "If you dictate, punctuation and accents aren't marked, only grammar and word choice."],
     'help.more': ['Saved: everything you starred. History: your recent lookups; tap one to see it again.',
       'Settings: country, app language, explanation language and your key.'],
@@ -320,6 +322,8 @@ const I18N = {
     'inst.android': 'Install Vos as an app: it opens instantly, works offline and keeps your data safe.',
     'inst.androidManual': 'Install Vos as an app: in Chrome tap the ⋮ menu → <b>Add to Home screen</b> (or <b>Install app</b>).',
     'inst.ios': 'Install Vos on your iPhone: tap <b>Share</b> (the square with the arrow) → <b>Add to Home Screen</b>. That way your key and saved items are never erased.',
+    'inst.firefox': "Install Vos as an app: in Firefox tap the ⋮ menu → <b>Install</b> (or <b>Add to Home screen</b>). On Android, Vos works best in Chrome, where the app's mic works.",
+    'inst.otherAndroid': "Install Vos as an app: look for <b>Install</b> or <b>Add to Home screen</b> in your browser's menu. On Android, Vos works best in Chrome.",
     'inst.btn': 'Install', 'inst.done': 'Vos is installed. Open it from your home screen.', 'inst.close': 'Not now'
   }
 };
@@ -1254,8 +1258,20 @@ $$('input[data-img]').forEach(inp => inp.addEventListener('change', e => {
   const f = e.target.files && e.target.files[0];
   const target = e.target.dataset.img;
   e.target.value = '';
-  if (f) openStage(target, f);
+  if (!f) return;
+  if (target === 'word') return openStage(target, f);   // Palabra keeps the preview for its focus box
+  sendPhoto(target, f);
 }));
+async function sendPhoto(target, f) {
+  const out = target === 'tr' ? $('#tr-out') : $('#check-out');
+  try {
+    const { img, url } = await loadImage(f);
+    const b64 = drawRotated(img, 0, 1568).toDataURL('image/jpeg', 0.85).split(',')[1];
+    URL.revokeObjectURL(url);
+    if (target === 'tr') runTranslate({ image: b64 });
+    else readAndCorrect(b64);
+  } catch { failed(out, new Error(t('err.image'))); }
+}
 
 /* ============================================================
    CHECK
@@ -1287,35 +1303,43 @@ pattern: one sentence in ${EXPL()} naming the single most useful thing to work o
 If nothing needs fixing, return the text unchanged and an empty changes array.`;
 }
 
-const READ_SYS = `You transcribe text from a photo so a Spanish learner can have it corrected afterwards.
-The photo may be handwriting or printed / on-screen text.
-Transcribe EXACTLY what is written. Do not correct anything: keep spelling mistakes, missing or wrong accents, wrong genders, wrong verb forms, odd punctuation and capitalisation exactly as they appear. Correcting it would defeat the purpose.
-Keep the original line breaks only where they mark a new paragraph or list item; join lines that just wrapped.
-If a word is genuinely illegible, write your best guess followed by [?].
-If the page has been marked up: leave out words that are struck through; put words inserted above the line (with a caret or arrow) where they belong in the sentence; if there are corrections in a second ink colour, ignore them and transcribe only the original writing.
-Reply with JSON only, no prose, no code fences: {"text":str,"unsure":int (how many [?] marks you used)}
-If there is no readable text, reply {"error":"no text"}.`;
+/* One call: read the photo exactly, then correct what was read. */
+function photoCheckSystem() {
+  return checkSystem() + `
 
-async function readForCheck(b64) {
+The input is a PHOTO of the learner's writing (handwriting or print), not typed text. Do two things in one reply:
+1. read: transcribe EXACTLY what is written. Do not correct anything here: keep spelling mistakes, missing or wrong accents, wrong genders, wrong verb forms, odd punctuation and capitalisation as they appear. Keep line breaks only where they mark a new paragraph or list item. If a word is genuinely illegible, write your best guess followed by [?]. If the page is marked up: leave out struck-through words, put words inserted above the line where they belong, and ignore corrections in a second ink colour.
+2. Correct the text you read, following all the rules above. "corrected" must not contain [?] marks, and removing a [?] mark is not a change.
+Reply with JSON only, no prose, no code fences:
+{"read":str,"unsure":int (how many [?] marks are in read),"corrected":str,"changes":[{"from":str,"to":str,"why":str,"kind":"error"|"style"}],"pattern":str|null}
+If there is no readable text, reply {"error":"no text"}.`;
+}
+async function readAndCorrect(b64) {
+  const out = $('#check-out');
   const box = $('#check-read');
-  $('#check-out').innerHTML = '';
-  loading(box, t('check.reading'));
+  box.innerHTML = '';
+  stopDictation();
+  loading(out, t('check.reading'));
+  $('#check-go').disabled = true;
   try {
     const d = await ask({
-      system: READ_SYS, maxTokens: 2500, photo: true,
+      system: photoCheckSystem(), maxTokens: 3500, photo: true,
       content: [{ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: b64 } },
-                { type: 'text', text: 'Transcribe this exactly, errors and all.' }]
+                { type: 'text', text: 'Read this exactly, then correct it.' }]
     });
-    if (d.error || !d.text) throw new Error(t('err.notext'));
-    $('#check-q').value = d.text;
+    if (d.error || !d.read) throw new Error(t('err.notext'));
+    const read = d.read.replace(/\s*\[\?\]/g, '');
+    $('#check-q').value = d.read;
     checkDictated = false;
     paintClear('check');
     box.innerHTML = `<div class="readnote">
       <img class="thumb small zoomable" src="data:image/jpeg;base64,${b64}" alt="${t('alt.photo')}">
       <p>${t('check.readNote', d.unsure || 0)}</p>
     </div>`;
-    $('#check-q').scrollIntoView({ block: 'start', behavior: 'smooth' });
-  } catch (e) { failed(box, e); }
+    renderCheck(read, d);
+    addHistory({ id: 'check:' + Date.now(), type: 'check', key: read, label: read.slice(0, 80), sub: d.changes?.length ? t('check.count', d.changes.length) : t('check.none'), data: d });
+  } catch (e) { failed(out, e); }
+  $('#check-go').disabled = false;
 }
 
 async function runCheck(text, cached) {
@@ -1355,7 +1379,8 @@ function renderCheck(text, d) {
 $('#check-go').onclick = () => {
   const t = $('#check-q').value.trim();
   stopDictation();
-  if (t) { $('#check-q').blur(); $('#check-read').innerHTML = ''; runCheck(t); }
+  const clean = t.replace(/\s*\[\?\]/g, '');
+  if (clean) { $('#check-q').blur(); $('#check-read').innerHTML = ''; runCheck(clean); }
 };
 
 /* word-level diff (LCS) */
@@ -1615,7 +1640,7 @@ function renderStage(target) {
     closeStage(target);
     if (target === 'tr') runTranslate({ image: b64 });
     else if (target === 'word') runIdentify(b64, focus);
-    else readForCheck(b64);
+    else readAndCorrect(b64);
   };
   box.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 }
@@ -1732,7 +1757,7 @@ function qrSVG(text) {
 function openGuide(opts = {}) {
   const g = $('#guide');
   const gate = !PHONE && !opts.direct;
-  const install = PHONE && !STANDALONE() ? `<div class="gnote">${IOS ? t('g.installIos') : t('g.installAndroid')}</div>` : '';
+  const install = PHONE && !STANDALONE() ? `<div class="gnote">${IOS ? t('g.installIos') : androidInstallText()}</div>` : '';
   $('#guide-body').innerHTML = `
     <div class="ghead"><h2>${t('g.title')}</h2>
       <button class="icon" id="g-close" aria-label="${t('g.close')}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
@@ -1817,11 +1842,18 @@ window.addEventListener('appinstalled', () => {
   $('#installbar').hidden = true;
   toast(t('inst.done'));
 });
+const UA = navigator.userAgent;
+const ANDROID_BROWSER = /Firefox|FxiOS/i.test(UA) ? 'firefox' : /SamsungBrowser/i.test(UA) ? 'samsung'
+  : /EdgA|OPR|Opera|Brave|DuckDuckGo|YaBrowser/i.test(UA) ? 'other' : 'chrome';
+function androidInstallText() {
+  if (ANDROID_BROWSER === 'chrome') return t('g.installAndroid');
+  return t(ANDROID_BROWSER === 'firefox' ? 'inst.firefox' : 'inst.otherAndroid');
+}
 function paintInstall() {
   const bar = $('#installbar');
   const phone = IOS || /Android/i.test(navigator.userAgent);
   if (!phone || STANDALONE() || installDismissed) { bar.hidden = true; return; }
-  const text = IOS ? t('inst.ios') : installEvent ? t('inst.android') : t('inst.androidManual');
+  const text = IOS ? t('inst.ios') : installEvent ? t('inst.android') : ANDROID_BROWSER === 'chrome' ? t('inst.androidManual') : androidInstallText();
   bar.innerHTML = `
     <img src="icons/icon-192.png" alt="" width="36" height="36">
     <p>${text}</p>
@@ -1874,7 +1906,7 @@ function appendDictated(target, text) {
   if (target === 'check') checkDictated = true;
 }
 function startDictation(target) {
-  if (!SR) return toast(t('dict.unsupported'));
+  if (!SR) { $(BOX[target]).focus(); return toast(t('dict.unsupported')); }
   if (dict) { const same = dict.target === target; stopDictation(); if (same) return; }
   const langs = target === 'tr' && trMicLang === 'en' ? ['en-US'] : [...new Set([C().loc, 'es-419', 'es-ES'])];
   const d = { target, want: true, lastHeard: Date.now(), langs };
@@ -1946,7 +1978,7 @@ applyI18n();
 $('#tr-miclang').setAttribute('aria-label', t('aria.miclang', trMicLang));
 paintDir();
 paintClear('tr'); paintClear('check');
-if (!SR) $$('[data-mic], #tr-miclang').forEach(b => b.hidden = true);
+if (!SR) $('#tr-miclang').hidden = true;   // mic stays: it points to the keyboard's mic
 seg($('#more-seg'), S.moreTab, v => { S.moreTab = v; saveSettings(); renderMore(v); });
 go(VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : S.view, { focus: false });
 if (!S.key && !S.guideSeen) setTimeout(openGuide, 300);

@@ -4,7 +4,11 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-_None open._
+22. **Firefox on Android: no mic button.** Firefox doesn't support web speech recognition, so the app hides the mic (keyboard dictation still works). Proposed: keep the mic button visible everywhere; in browsers without speech recognition, tapping it focuses the text box and shows "usá el micrófono del teclado". Also make the install banner browser-aware (Firefox: menu ⋮ → Instalar / Agregar a la pantalla de inicio; Chrome steps only in Chrome) and mention Chrome works best on Android. _Small._
+
+23. **Photos in one step.** Corregir: one call to the photo model that reads the photo and corrects it together; the result shows the corrections, and the text it read goes into the box so a misread can be fixed and re-checked. Words it was unsure about are flagged in the result. Traducir already reads and translates in one call. Also proposed: drop the preview/rotate screen so a photo goes straight to the result on both tabs (the photo models handle sideways text well); retake if needed. _Small-medium._
+
+24. **English UI: rename "Check" to "Correct"** (tab, button, help, messages), to match Corregir. _Quick._
 
 ## Proposed, not yet approved
 

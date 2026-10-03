@@ -1,14 +1,15 @@
 # Vos: working notes for Claude
 
-Vos is a Spanish reference app for one learner, Cory (English speaker living in Uruguay, B2 working toward C1). It's a PWA (progressive web app) served from GitHub Pages at https://ghostpants0111.github.io/vos/ and installed to his Android home screen. Read README.md for what the app does from a user's point of view, and BACKLOG.md for what's requested, parked and shipped.
+Vos is a personal Spanish reference app tuned for Uruguayan Spanish. It's a PWA (progressive web app) served from GitHub Pages at https://ghostpants0111.github.io/vos/ and installed to an Android home screen. Read README.md for what the app does from a user's point of view, and BACKLOG.md for what's requested, parked and shipped.
 
-## How Cory works with this repo
+## Workflow
 
-- He leaves feedback in chat. Log each item in BACKLOG.md under **Requested** with the next number, and push the backlog change. Don't build it yet.
-- Build and ship only when he says so ("ship it", "go ahead and ship"). Then build, test, bump the version, move the items to **Done** under a new version heading with the date, commit and push.
-- Ideas you come up with yourself go under **Proposed, not yet approved** until he approves them.
-- He likes short, direct replies with 1 to 3 real follow-up questions. Spell out a domain acronym the first time it comes up. Never use the word "expat". In anything that ships (UI text, README, docs) avoid em dashes and AI-sounding phrasing.
-- His API key never goes in chat or in the repo. It lives only in the app's localStorage on his phone.
+- Feedback arrives in chat. Log each item in BACKLOG.md under **Requested** with the next number, and push the backlog change. Don't build it yet.
+- Build and ship only when the owner says so ("ship it", "go ahead and ship"). Then build, test, bump the version, move the items to **Done** under a new version heading with the date, commit and push.
+- Ideas you come up with yourself go under **Proposed, not yet approved** until they're approved.
+- In anything that ships (UI text, README, docs) avoid em dashes and AI-sounding phrasing.
+- API keys never go in chat or in the repo. They live only in the app's localStorage on the phone.
+- Commit as `GhostPants0111 <125928292+GhostPants0111@users.noreply.github.com>`, never a personal email.
 
 ## Principles
 

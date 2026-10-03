@@ -4,7 +4,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-_None open._
+25. **Short hints under each tab's input**, so the main features are discoverable without opening Ayuda. One or two lines per tab, e.g. Palabra: "Escribí una palabra en español o inglés, o sacale una foto a algo para saber cómo se llama." Traducir: type, dictate or photograph text in either language. Corregir: type, dictate or photograph your writing; Solo errores vs Exigime. Conjugar already has one. Proposed: show the hint while there's no result and hide it once a result appears, like Conjugar does. _Small._
 
 ## Proposed, not yet approved
 

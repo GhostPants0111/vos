@@ -16,7 +16,7 @@ The key is stored only in that browser on that phone. It is never in this repo. 
 
 ## Updating
 
-Edit files, bump `VERSION` in `sw.js` so phones pick up the change, push to `main`. GitHub Pages redeploys on its own.
+Edit files, bump `VERSION` in both `app.js` and `sw.js` so phones pick up the change, run `tests/run.sh` (headless Playwright, no key needed), push to `main`. GitHub Pages redeploys on its own. CLAUDE.md has the full working notes.
 
 To rebuild the verb data after changing the vos rules: `cd tools && python3 build_data.py`.
 

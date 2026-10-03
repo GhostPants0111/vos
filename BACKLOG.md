@@ -4,7 +4,7 @@ Feedback collected while using v1.0.0. Batched into the next release.
 
 ## Requested
 
-25. **Short hints under each tab's input**, so the main features are discoverable without opening Ayuda. One or two lines per tab, e.g. Palabra: "Escribí una palabra en español o inglés, o sacale una foto a algo para saber cómo se llama." Traducir: type, dictate or photograph text in either language. Corregir: type, dictate or photograph your writing; Solo errores vs Exigime. Conjugar already has one. Confirmed: the hint disappears as soon as there's input or a result (that space belongs to the output), and comes back when the box is cleared and there's no result showing. _Small._
+_(nothing open)_
 
 ## Proposed, not yet approved
 
@@ -13,6 +13,10 @@ Feedback collected while using v1.0.0. Batched into the next release.
 - Show the version number more prominently so it's obvious when an update has landed.
 
 ## Done
+
+### v1.10.0 (2026-10-02)
+
+25. **Short hints under each tab's input**, so the main features are discoverable without opening Ayuda. One or two lines per tab, e.g. Palabra: "Escribí una palabra en español o inglés, o sacale una foto a algo para saber cómo se llama." Traducir: type, dictate or photograph text in either language. Corregir: type, dictate or photograph your writing; Solo errores vs Exigime. Conjugar already has one. Confirmed: the hint disappears as soon as there's input or a result (that space belongs to the output), and comes back when the box is cleared and there's no result showing. _Small._
 
 ### v1.9.0 (2026-10-02)
 

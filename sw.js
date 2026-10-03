@@ -1,5 +1,5 @@
 // Offline cache for Vos. Bump VERSION whenever app files change.
-const VERSION = 'vos-1.9.0';
+const VERSION = 'vos-1.10.0';
 const CORE = [
   './',
   'index.html',

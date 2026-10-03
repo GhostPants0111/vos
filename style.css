@@ -384,3 +384,7 @@ body { padding-top: calc(env(safe-area-inset-top) + 12px); }
   .guide { align-items: center; }
   .guide-card { border-radius: 20px; max-height: 88vh; }
 }
+
+/* v1.10 tab hints */
+.tabhint { padding: 12px 0 4px; font-size: 14.5px; }
+.tabhint[hidden] { display: none; }

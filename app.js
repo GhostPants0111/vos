@@ -5,7 +5,7 @@
    Conjugate (offline) · Word · Translate · Check (Claude API)
    ============================================================ */
 
-const VERSION = '1.9.0';
+const VERSION = '1.10.0';
 // Fixed models. Change here, not in the app.
 const CLAUDE_TEXT = 'claude-haiku-4-5';
 const CLAUDE_PHOTO = 'claude-sonnet-5-5';
@@ -137,6 +137,9 @@ const I18N = {
     'set.countryHelp': 'Vos está pensada para Uruguay. Otros países cambian el vocabulario, el voseo o tuteo, el dictado y la voz; las notas locales pueden ser menos precisas.',
     'country.set': n => `País: ${n}`,
     'ident.hint': '¿Qué es esto? Sacale una foto.',
+    'hint.word': 'Escribí una palabra en español o inglés y te doy el significado, el género, sinónimos y cómo se usa acá. O sacale una foto a algo y te digo cómo se llama.',
+    'hint.tr': 'Escribí, dictá o sacale una foto a un texto en español o inglés. El idioma se detecta solo, y con las flechas elegís la dirección. <b>Informal</b> o <b>Formal</b> cambia el tono.',
+    'hint.check': 'Escribí, dictá o sacale una foto a algo que escribiste en español, aunque sea a mano. <b>Solo errores</b> arregla lo que está mal; <b>Exigime</b> además te muestra cómo sonar más natural.',
     'stage.focusPh': 'Opcional: en qué fijarse (ej. solo la comida)',
     'stage.sendWord': 'Identificar', 'ident.working': 'Mirando la foto…',
     'ident.none': 'No reconocí nada en esa foto.', 'ident.general': 'en otros lados:',
@@ -274,6 +277,9 @@ const I18N = {
     'set.countryHelp': 'Vos is built for Uruguay. Other countries change the vocabulary, vos or tú, dictation and voice; local notes may be less precise.',
     'country.set': n => `Country: ${n}`,
     'ident.hint': 'What is this? Snap a photo.',
+    'hint.word': 'Type a word in Spanish or English for its meaning, gender, synonyms and how it\'s used here. Or snap a photo of something to find out what it\'s called.',
+    'hint.tr': 'Type, dictate or photograph text in Spanish or English. The language is detected automatically, and the arrows set the direction. <b>Casual</b> or <b>Formal</b> changes the tone.',
+    'hint.check': 'Type, dictate or photograph something you wrote in Spanish, handwriting included. <b>Errors only</b> fixes what\'s wrong; <b>Push me</b> also shows you how to sound more natural.',
     'stage.focusPh': 'Optional: what to focus on (e.g. just the food)',
     'stage.sendWord': 'Identify', 'ident.working': 'Looking at the photo…',
     'ident.none': "Couldn't recognise anything in that photo.", 'ident.general': 'elsewhere:',
@@ -334,6 +340,7 @@ function t(k, ...a) {
 function applyI18n() {
   document.documentElement.lang = S.ui === 'en' ? 'en' : 'es-UY';
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
+  $$('[data-i18n-html]').forEach(el => { el.innerHTML = t(el.dataset.i18nHtml); });
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
   $$('[data-i18n-alt]').forEach(el => { el.alt = t(el.dataset.i18nAlt); });
@@ -1475,6 +1482,7 @@ function tryExample(k) {
   go(k, { focus: false });
   $(box).value = ex;
   if (k === 'tr' || k === 'check') paintClear(k);
+  paintHints();
   toast(t('help.filled'));
 }
 
@@ -1668,6 +1676,34 @@ const BOX = { tr: '#tr-q', check: '#check-q' };
 function paintClear(target) {
   const btn = $(`[data-clear="${target}"]`);
   if (btn) btn.hidden = !$(BOX[target]).value;
+  paintHints();
+}
+
+/* Tab hints (#25): shown on an empty tab, hidden once there's input, a photo or a result. */
+const HINT_WATCH = {
+  word: ['#word-q', '#word-stage', '#word-out'],
+  tr: ['#tr-q', '#tr-stage', '#tr-out'],
+  check: ['#check-q', '#check-stage', '#check-read', '#check-out'],
+};
+function paintHints() {
+  for (const [k, sels] of Object.entries(HINT_WATCH)) {
+    const h = $('#' + k + '-hint');
+    if (!h) continue;
+    const busy = sels.some(sel => {
+      const el = $(sel);
+      return el && (el.tagName === 'DIV' ? el.childElementCount || el.textContent.trim() : el.value.trim());
+    });
+    h.hidden = !!busy;
+  }
+}
+{
+  const mo = new MutationObserver(paintHints);
+  for (const sels of Object.values(HINT_WATCH)) for (const sel of sels) {
+    const el = $(sel);
+    if (!el) continue;
+    if (el.tagName === 'DIV') mo.observe(el, { childList: true, subtree: true, characterData: true });
+    else el.addEventListener('input', paintHints);
+  }
 }
 for (const target of Object.keys(BOX)) {
   $(BOX[target]).addEventListener('input', () => paintClear(target));
